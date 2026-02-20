@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>厨房运营仪表盘 — 有点东西</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-deep:#0c0a09;--bg-card:#1c1917;--bg-card-hover:#292524;--bg-elevated:#292524;
+  --border:#3f3f46;--border-subtle:#27272a;
+  --amber:#f59e0b;--amber-dim:#92400e;--amber-glow:rgba(245,158,11,.15);
+  --orange:#ea580c;--orange-dim:#9a3412;
+  --copper:#c2956a;--copper-dim:#8b6e4e;
+  --green:#22c55e;--green-dim:#166534;--green-glow:rgba(34,197,94,.12);
+  --red:#ef4444;--red-dim:#991b1b;--red-glow:rgba(239,68,68,.12);
+  --blue:#3b82f6;--blue-dim:#1e40af;
+  --text:#fafaf9;--text-secondary:#a8a29e;--text-muted:#78716c;
+  --font-body:'Noto Sans SC',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --font-display:'Playfair Display',serif;
+}
+html{font-size:14px;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-body);background:var(--bg-deep);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(245,158,11,.04),transparent),radial-gradient(ellipse 60% 40% at 80% 100%,rgba(234,88,12,.03),transparent);pointer-events:none;z-index:0}
+
+.header{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(12,10,9,.85);border-bottom:1px solid var(--border-subtle);padding:0 2rem}
+.header-inner{max-width:1600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{display:flex;align-items:center;gap:1rem}
+.brand-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--amber),var(--orange));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--bg-deep);letter-spacing:-1px;font-family:var(--font-display)}
+.brand h1{font-size:1.15rem;font-weight:600;letter-spacing:.02em}
+.brand h1 span{color:var(--text-muted);font-weight:400;margin-left:.5rem;font-size:.85rem}
+.header-right{display:flex;align-items:center;gap:1.5rem}
+.header-time{font-family:var(--font-mono);font-size:.9rem;color:var(--text-secondary);letter-spacing:.05em}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s ease-in-out infinite}
+.live-badge{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:var(--green);font-weight:500;text-transform:uppercase;letter-spacing:.1em}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.brand-tags{display:flex;gap:.5rem}
+.brand-tag{padding:2px 10px;border-radius:20px;font-size:.7rem;font-weight:600;letter-spacing:.05em}
+.brand-tag.ylb{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
+.brand-tag.ngx{background:rgba(234,88,12,.15);color:var(--orange);border:1px solid rgba(234,88,12,.25)}
+
+.dashboard{max-width:1600px;margin:0 auto;padding:1.5rem 2rem 3rem;position:relative;z-index:1}
+
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.kpi-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:16px;padding:1.25rem 1.5rem;position:relative;overflow:hidden;transition:all .3s ease}
+.kpi-card:hover{border-color:var(--border);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi-card:nth-child(1)::before{background:linear-gradient(90deg,var(--amber),transparent)}
+.kpi-card:nth-child(2)::before{background:linear-gradient(90deg,var(--green),transparent)}
+.kpi-card:nth-child(3)::before{background:linear-gradient(90deg,var(--orange),transparent)}
+.kpi-card:nth-child(4)::before{background:linear-gradient(90deg,var(--copper),transparent)}
+.kpi-label{font-size:.8rem;color:var(--text-muted);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem}
+.kpi-label .icon{font-size:1rem}
+.kpi-value{font-family:var(--font-mono);font-size:2rem;font-weight:700;line-height:1.1;margin-bottom:.35rem}
+.kpi-card:nth-child(1) .kpi-value{color:var(--amber)}
+.kpi-card:nth-child(2) .kpi-value{color:var(--green)}
+.kpi-card:nth-child(3) .kpi-value{color:var(--orange)}
+.kpi-card:nth-child(4) .kpi-value{color:var(--copper)}
+.kpi-trend{font-size:.75rem;display:flex;align-items:center;gap:.3rem}
+.kpi-trend.up{color:var(--green)}.kpi-trend.down{color:var(--red)}
+.kpi-sub{font-size:.75rem;color:var(--text-muted)}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem}
+.grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1rem}
+
+.panel{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:16px;padding:1.25rem 1.5rem;position:relative;overflow:hidden}
+.panel:hover{border-color:var(--border)}
+.panel-title{font-size:.85rem;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+.panel-title .label{display:flex;align-items:center;gap:.5rem}
+.panel-title .badge{font-size:.65rem;padding:2px 8px;border-radius:10px;font-weight:500;font-family:var(--font-mono)}
+
+.order-list{display:flex;flex-direction:column;gap:.5rem;max-height:320px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-subtle) transparent}
+.order-item{display:grid;grid-template-columns:80px 1fr 100px 80px 70px;align-items:center;gap:.75rem;padding:.6rem .75rem;border-radius:10px;background:var(--bg-deep);border:1px solid transparent;transition:all .2s}
+.order-item:hover{border-color:var(--border-subtle);background:var(--bg-elevated)}
+.order-id{font-family:var(--font-mono);font-size:.8rem;color:var(--text-secondary);font-weight:500}
+.order-dishes{font-size:.8rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.order-time{font-family:var(--font-mono);font-size:.75rem;color:var(--text-muted);text-align:right}
+.order-elapsed{font-family:var(--font-mono);font-size:.75rem;text-align:right}
+.status-tag{display:inline-flex;align-items:center;gap:.3rem;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:600;white-space:nowrap}
+.status-tag.waiting{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
+.status-tag.cooking{background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.2);animation:cookPulse 1.5s ease infinite}
+.status-tag.done{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.status-tag.urgent{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.2);animation:urgentPulse 1s ease infinite}
+@keyframes cookPulse{0%,100%{opacity:1}50%{opacity:.7}}
+@keyframes urgentPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(239,68,68,.3)}50%{opacity:.85;box-shadow:0 0 0 4px rgba(239,68,68,0)}}
+
+.stock-list{display:flex;flex-direction:column;gap:.5rem}
+.stock-item{display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;border-radius:10px;background:var(--bg-deep)}
+.stock-name{font-size:.85rem;font-weight:500}
+.stock-bar-wrap{flex:1;margin:0 1rem;height:6px;background:var(--bg-elevated);border-radius:3px;overflow:hidden}
+.stock-bar{height:100%;border-radius:3px;transition:width .5s ease}
+.stock-bar.danger{background:linear-gradient(90deg,var(--red),var(--red-dim))}
+.stock-bar.warning{background:linear-gradient(90deg,var(--amber),var(--amber-dim))}
+.stock-bar.ok{background:linear-gradient(90deg,var(--green),var(--green-dim))}
+.stock-pct{font-family:var(--font-mono);font-size:.75rem;min-width:40px;text-align:right}
+.stock-pct.danger{color:var(--red)}.stock-pct.warning{color:var(--amber)}.stock-pct.ok{color:var(--green)}
+.stock-alert-icon{margin-right:.5rem;font-size:.9rem}
+
+.store-table{width:100%;border-collapse:collapse}
+.store-table th{text-align:left;font-size:.7rem;color:var(--text-muted);font-weight:500;padding:.5rem .6rem;border-bottom:1px solid var(--border-subtle);text-transform:uppercase;letter-spacing:.08em}
+.store-table td{font-size:.82rem;padding:.6rem;border-bottom:1px solid rgba(63,63,70,.3)}
+.store-table tr:last-child td{border-bottom:none}
+.store-table td:not(:first-child){font-family:var(--font-mono);text-align:center}
+.store-name{font-weight:500;display:flex;align-items:center;gap:.4rem}
+.store-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.efficiency-bar{display:inline-block;height:4px;border-radius:2px;vertical-align:middle;margin-right:.4rem}
+
+.chart-wrap{position:relative;height:240px}
+.chart-wrap-sm{position:relative;height:200px}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-subtle);border-radius:2px}
+
+@media(max-width:1200px){.kpi-row{grid-template-columns:repeat(2,1fr)}.grid-2,.grid-3,.grid-2-1{grid-template-columns:1fr}}
+@media(max-width:768px){.dashboard{padding:1rem}.header{padding:0 1rem}.order-item{grid-template-columns:60px 1fr 70px 60px}.brand-tags{display:none}}
+
+.noise{position:fixed;inset:0;z-index:0;opacity:.03;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+.fade-in{animation:fadeIn .6s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.delay-1{animation-delay:.1s}.delay-2{animation-delay:.2s}.delay-3{animation-delay:.3s}.delay-4{animation-delay:.35s}
+
+.goal-item{display:flex;align-items:center;justify-content:space-between;padding:.55rem .75rem;border-radius:10px;background:var(--bg-deep)}
+.goal-item.done{border:1px solid rgba(34,197,94,.2)}
+.goal-item.pending{border:1px solid rgba(239,68,68,.15)}
+.goal-left{display:flex;align-items:center;gap:.5rem}
+.goal-icon{font-size:.9rem}
+.goal-text{font-size:.8rem}
+.goal-text.done{color:var(--text-secondary)}
+.goal-text.pending{color:var(--text)}
+.goal-value{font-family:var(--font-mono);font-size:.8rem;font-weight:600}
+.goal-value.done{color:var(--green)}
+.goal-value.pending{color:var(--amber)}
+</style>
+</head>
+<body>
+<div class="noise"></div>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-icon">YD</div>
+      <h1>厨房运营中心<span>Kitchen Ops</span></h1>
+      <div class="brand-tags">
+        <span class="brand-tag ylb">野百灵</span>
+        <span class="brand-tag ngx">宁桂杏</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-badge"><div class="live-dot"></div>实时监控</div>
+      <div class="header-time" id="clock">--:--:--</div>
+    </div>
+  </div>
+</header>
+
+<main class="dashboard">
+  <div class="kpi-row">
+    <div class="kpi-card fade-in">
+      <div class="kpi-label"><span class="icon">📋</span>今日订单</div>
+      <div class="kpi-value" id="kpi-orders">386</div>
+      <div class="kpi-trend up">↑ 12.3% <span class="kpi-sub">vs 昨日</span></div>
+    </div>
+    <div class="kpi-card fade-in delay-1">
+      <div class="kpi-label"><span class="icon">⚡</span>平均出餐</div>
+      <div class="kpi-value">8<span style="font-size:1rem;margin-left:2px">分</span>24<span style="font-size:1rem;margin-left:2px">秒</span></div>
+      <div class="kpi-trend up">↑ 快了1.2分 <span class="kpi-sub">vs 上周</span></div>
+    </div>
+    <div class="kpi-card fade-in delay-2">
+      <div class="kpi-label"><span class="icon">🔄</span>退菜率</div>
+      <div class="kpi-value">2.1<span style="font-size:1rem">%</span></div>
+      <div class="kpi-trend down">↑ 0.3% <span class="kpi-sub">需关注</span></div>
+    </div>
+    <div class="kpi-card fade-in delay-3">
+      <div class="kpi-label"><span class="icon">💰</span>今日营收</div>
+      <div class="kpi-value">¥38,720</div>
+      <div class="kpi-trend up">↑ 8.5% <span class="kpi-sub">vs 昨日</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2 fade-in delay-3">
+    <div class="panel">
+      <div class="panel-title">
+        <span class="label">📡 实时出餐状态</span>
+        <span class="badge" style="background:var(--amber-glow);color:var(--amber)">待出 6 · 制作中 4</span>
+      </div>
+      <div class="order-list" id="orderList"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">
+        <span class="label">🔥 菜品热度排行</span>
+        <span class="badge" style="background:var(--green-glow);color:var(--green)">今日 TOP 8</span>
+      </div>
+      <div class="chart-wrap"><canvas id="dishChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3 fade-in delay-4">
+    <div class="panel">
+      <div class="panel-title">
+        <span class="label">📈 出餐时效趋势</span>
+        <span class="badge" style="background:rgba(59,130,246,.12);color:var(--blue)">近7日</span>
+      </div>
+      <div class="chart-wrap-sm"><canvas id="trendChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">
+        <span class="label">⚠️ 退菜原因分析</span>
+        <span class="badge" style="background:var(--red-glow);color:var(--red)">本周</span>
+      </div>
+      <div class="chart-wrap-sm"><canvas id="returnChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">
+        <span class="label">📦 备料预警</span>
+        <span class="badge" style="background:var(--red-glow);color:var(--red)">2项紧急</span>
+      </div>
+      <div class="stock-list" id="stockList"></div>
+    </div>
+  </div>
+
+  <div class="grid-2-1 fade-in delay-4">
+    <div class="panel">
+      <div class="panel-title">
+        <span class="label">🏪 各门店厨房效率对比</span>
+        <span class="badge" style="background:rgba(194,149,106,.12);color:var(--copper)">今日实时</span>
+      </div>
+      <table class="store-table">
+        <thead><tr><th style="width:25%">门店</th><th>品牌</th><th>订单量</th><th>均出餐</th><th>退菜率</th><th>效率评分</th></tr></thead>
+        <tbody id="storeTable"></tbody>
+      </table>
+    </div>
+    <div class="panel" style="display:flex;flex-direction:column;justify-content:space-between">
+      <div class="panel-title"><span class="label">🎯 今日目标</span></div>
+      <div id="goalList" style="flex:1;display:flex;flex-direction:column;gap:.6rem"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  // Clock
+  function updateClock(){
+    var now=new Date();
+    var h=String(now.getHours()).padStart(2,'0');
+    var m=String(now.getMinutes()).padStart(2,'0');
+    var s=String(now.getSeconds()).padStart(2,'0');
+    document.getElementById('clock').textContent=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+h+':'+m+':'+s;
+  }
+  setInterval(updateClock,1000);
+  updateClock();
+
+  // Safe element builder
+  function el(tag, attrs, children){
+    var e=document.createElement(tag);
+    if(attrs){
+      Object.keys(attrs).forEach(function(k){
+        if(k==='className') e.className=attrs[k];
+        else if(k==='style') e.style.cssText=attrs[k];
+        else if(k==='textContent') e.textContent=attrs[k];
+        else e.setAttribute(k,attrs[k]);
+      });
+    }
+    if(children){
+      children.forEach(function(c){
+        if(typeof c==='string') e.appendChild(document.createTextNode(c));
+        else if(c) e.appendChild(c);
+      });
+    }
+    return e;
+  }
+
+  // Orders
+  var orders=[
+    {id:'#2174',dishes:'桂花糖藕 x2, 酸菜鱼',time:'11:42',elapsed:'6:32',status:'cooking'},
+    {id:'#2173',dishes:'宁波汤圆, 杏仁豆腐',time:'11:40',elapsed:'8:15',status:'cooking'},
+    {id:'#2172',dishes:'葱油拌面 x3',time:'11:38',elapsed:'10:42',status:'urgent'},
+    {id:'#2171',dishes:'蟹粉小笼, 虾仁锅巴',time:'11:36',elapsed:'12:08',status:'urgent'},
+    {id:'#2170',dishes:'百灵招牌烤鸡, 凉拌三丝',time:'11:35',elapsed:'—',status:'waiting'},
+    {id:'#2169',dishes:'红烧肉 x2, 蒜蓉西兰花',time:'11:34',elapsed:'—',status:'waiting'},
+    {id:'#2168',dishes:'酱鸭, 油焖春笋',time:'11:33',elapsed:'—',status:'waiting'},
+    {id:'#2167',dishes:'糖醋排骨, 干锅花菜',time:'11:30',elapsed:'—',status:'waiting'},
+    {id:'#2166',dishes:'东坡肉, 龙井虾仁',time:'11:28',elapsed:'—',status:'waiting'},
+    {id:'#2165',dishes:'荠菜馄饨 x4',time:'11:26',elapsed:'—',status:'waiting'},
+    {id:'#2164',dishes:'百灵烤鸡翅, 蛋炒饭 x2',time:'11:22',elapsed:'14:20',status:'done'},
+    {id:'#2163',dishes:'宁桂杏拼盘, 梅菜扣肉',time:'11:18',elapsed:'11:45',status:'done'},
+    {id:'#2162',dishes:'蒸鲈鱼, 时令蔬菜',time:'11:15',elapsed:'9:30',status:'done'},
+    {id:'#2161',dishes:'腌笃鲜, 素烧鹅',time:'11:10',elapsed:'8:12',status:'done'}
+  ];
+  var statusMap={waiting:'⏳ 待出餐',cooking:'🔥 制作中',done:'✅ 已完成',urgent:'🚨 超时'};
+  var colorMap={urgent:'color:var(--red)',cooking:'color:var(--blue)',done:'color:var(--green)',waiting:'color:var(--text-muted)'};
+
+  var orderList=document.getElementById('orderList');
+  orders.forEach(function(o){
+    var row=el('div',{className:'order-item'},[
+      el('span',{className:'order-id',textContent:o.id}),
+      el('span',{className:'order-dishes',textContent:o.dishes}),
+      el('span',{className:'status-tag '+o.status,textContent:statusMap[o.status]}),
+      el('span',{className:'order-time',textContent:o.time}),
+      el('span',{className:'order-elapsed',style:colorMap[o.status],textContent:o.elapsed})
+    ]);
+    orderList.appendChild(row);
+  });
+
+  // Dish Chart
+  new Chart(document.getElementById('dishChart'),{
+    type:'bar',
+    data:{
+      labels:['桂花糖藕','百灵烤鸡','酸菜鱼','蟹粉小笼','红烧肉','龙井虾仁','宁桂杏拼盘','荠菜馄饨'],
+      datasets:[{
+        data:[58,52,47,43,41,38,35,32],
+        backgroundColor:['rgba(245,158,11,.7)','rgba(245,158,11,.6)','rgba(245,158,11,.5)','rgba(234,88,12,.6)','rgba(234,88,12,.5)','rgba(194,149,106,.6)','rgba(194,149,106,.5)','rgba(194,149,106,.4)'],
+        borderColor:['rgba(245,158,11,.9)','rgba(245,158,11,.8)','rgba(245,158,11,.7)','rgba(234,88,12,.8)','rgba(234,88,12,.7)','rgba(194,149,106,.8)','rgba(194,149,106,.7)','rgba(194,149,106,.6)'],
+        borderWidth:1,borderRadius:6,barPercentage:.7
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(28,25,23,.95)',titleColor:'#fafaf9',bodyColor:'#a8a29e',borderColor:'rgba(245,158,11,.3)',borderWidth:1,padding:10,cornerRadius:8,bodyFont:{family:'JetBrains Mono'},callbacks:{label:function(c){return'  '+c.raw+' 份'}}}},
+      scales:{
+        x:{grid:{color:'rgba(63,63,70,.3)',drawBorder:false},ticks:{color:'#78716c',font:{family:'JetBrains Mono',size:11}}},
+        y:{grid:{display:false},ticks:{color:'#a8a29e',font:{family:'Noto Sans SC',size:12}}}
+      }
+    }
+  });
+
+  // Trend Chart
+  new Chart(document.getElementById('trendChart'),{
+    type:'line',
+    data:{
+      labels:['2/11','2/12','2/13','2/14','2/15','2/16','2/17'],
+      datasets:[
+        {label:'野百灵',data:[9.8,10.2,9.5,8.8,9.1,8.6,8.4],borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.08)',fill:true,tension:.4,pointBackgroundColor:'#f59e0b',pointRadius:4,pointHoverRadius:6,borderWidth:2},
+        {label:'宁桂杏',data:[11.2,10.8,10.5,10.1,9.8,9.5,9.2],borderColor:'#ea580c',backgroundColor:'rgba(234,88,12,.06)',fill:true,tension:.4,pointBackgroundColor:'#ea580c',pointRadius:4,pointHoverRadius:6,borderWidth:2}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:'#a8a29e',usePointStyle:true,pointStyle:'circle',padding:16,font:{family:'Noto Sans SC',size:11}}},tooltip:{backgroundColor:'rgba(28,25,23,.95)',titleColor:'#fafaf9',bodyColor:'#a8a29e',borderColor:'rgba(63,63,70,.5)',borderWidth:1,padding:10,cornerRadius:8,bodyFont:{family:'JetBrains Mono'},callbacks:{label:function(c){return'  '+c.dataset.label+': '+c.raw+' 分钟'}}}},
+      scales:{
+        x:{grid:{color:'rgba(63,63,70,.2)',drawBorder:false},ticks:{color:'#78716c',font:{family:'JetBrains Mono',size:11}}},
+        y:{min:7,max:12,grid:{color:'rgba(63,63,70,.2)',drawBorder:false},ticks:{color:'#78716c',font:{family:'JetBrains Mono',size:11},callback:function(v){return v+'分'}}}
+      }
+    }
+  });
+
+  // Return Pie
+  new Chart(document.getElementById('returnChart'),{
+    type:'doughnut',
+    data:{
+      labels:['等待过久','口味不符','上错菜品','食材问题','其他'],
+      datasets:[{data:[35,25,20,12,8],backgroundColor:['rgba(239,68,68,.7)','rgba(245,158,11,.7)','rgba(59,130,246,.7)','rgba(234,88,12,.7)','rgba(120,113,108,.5)'],borderColor:'#1c1917',borderWidth:3,hoverOffset:8}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{legend:{position:'bottom',labels:{color:'#a8a29e',usePointStyle:true,pointStyle:'circle',padding:12,font:{family:'Noto Sans SC',size:11}}},tooltip:{backgroundColor:'rgba(28,25,23,.95)',titleColor:'#fafaf9',bodyColor:'#a8a29e',borderColor:'rgba(63,63,70,.5)',borderWidth:1,padding:10,cornerRadius:8,bodyFont:{family:'JetBrains Mono'},callbacks:{label:function(c){return'  '+c.label+': '+c.raw+'%'}}}}
+    }
+  });
+
+  // Stock Alerts
+  var stocks=[
+    {name:'鲈鱼',pct:8,level:'danger'},
+    {name:'桂花蜜',pct:12,level:'danger'},
+    {name:'春笋',pct:25,level:'warning'},
+    {name:'虾仁',pct:30,level:'warning'},
+    {name:'五花肉',pct:45,level:'warning'},
+    {name:'西兰花',pct:68,level:'ok'},
+    {name:'大米',pct:82,level:'ok'}
+  ];
+  var iconMap={danger:'🔴',warning:'🟡',ok:'🟢'};
+  var stockList=document.getElementById('stockList');
+  stocks.forEach(function(s){
+    var bar=el('div',{className:'stock-bar '+s.level,style:'width:'+s.pct+'%'});
+    var barWrap=el('div',{className:'stock-bar-wrap'},[bar]);
+    var item=el('div',{className:'stock-item'},[
+      el('span',{className:'stock-alert-icon',textContent:iconMap[s.level]}),
+      el('span',{className:'stock-name',textContent:s.name}),
+      barWrap,
+      el('span',{className:'stock-pct '+s.level,textContent:s.pct+'%'})
+    ]);
+    stockList.appendChild(item);
+  });
+
+  // Store Table
+  var stores=[
+    {name:'上马店',brand:'野百灵',dot:'#f59e0b',orders:128,avg:'7:42',ret:'1.6%',score:94},
+    {name:'上马店',brand:'宁桂杏',dot:'#ea580c',orders:96,avg:'8:55',ret:'2.1%',score:88},
+    {name:'虹桥店',brand:'野百灵',dot:'#f59e0b',orders:82,avg:'9:10',ret:'2.4%',score:83},
+    {name:'静安店',brand:'宁桂杏',dot:'#ea580c',orders:45,avg:'8:30',ret:'1.8%',score:90},
+    {name:'徐汇店',brand:'野百灵',dot:'#f59e0b',orders:35,avg:'10:15',ret:'3.2%',score:76}
+  ];
+  var storeTable=document.getElementById('storeTable');
+  stores.forEach(function(s){
+    var scoreColor=s.score>=90?'#22c55e':s.score>=80?'#f59e0b':'#ef4444';
+    var tr=document.createElement('tr');
+
+    var tdName=document.createElement('td');
+    var nameSpan=el('span',{className:'store-name'},[
+      el('span',{className:'store-dot',style:'background:'+s.dot}),
+      document.createTextNode(s.name)
+    ]);
+    tdName.appendChild(nameSpan);
+
+    var tdBrand=el('td',{style:'text-align:center;font-size:.75rem;color:var(--text-muted)',textContent:s.brand});
+    var tdOrders=el('td',{textContent:String(s.orders)});
+    var tdAvg=el('td',{textContent:s.avg});
+    var tdRet=el('td',{textContent:s.ret});
+
+    var tdScore=document.createElement('td');
+    var effBar=el('span',{className:'efficiency-bar',style:'width:'+Math.round(s.score*.6)+'px;background:'+scoreColor});
+    var effText=document.createTextNode(String(s.score));
+    var effSpan=el('span',{style:'color:'+scoreColor},[effText]);
+    tdScore.appendChild(effBar);
+    tdScore.appendChild(effSpan);
+
+    tr.appendChild(tdName);
+    tr.appendChild(tdBrand);
+    tr.appendChild(tdOrders);
+    tr.appendChild(tdAvg);
+    tr.appendChild(tdRet);
+    tr.appendChild(tdScore);
+    storeTable.appendChild(tr);
+  });
+
+  // Goals
+  var goals=[
+    {text:'午餐高峰出餐 ≤ 10分钟',done:true,value:'8:24'},
+    {text:'退菜率 ≤ 2.0%',done:false,value:'2.1%'},
+    {text:'日订单量 ≥ 400单',done:false,value:'386'},
+    {text:'备料充足率 ≥ 80%',done:false,value:'71%'}
+  ];
+  var goalList=document.getElementById('goalList');
+  goals.forEach(function(g){
+    var cls=g.done?'done':'pending';
+    var item=el('div',{className:'goal-item '+cls},[
+      el('div',{className:'goal-left'},[
+        el('span',{className:'goal-icon',textContent:g.done?'✅':'⬜'}),
+        el('span',{className:'goal-text '+cls,textContent:g.text})
+      ]),
+      el('span',{className:'goal-value '+cls,textContent:g.value})
+    ]);
+    goalList.appendChild(item);
+  });
+
+  // Simulated live updates
+  var orderCount=386;
+  setInterval(function(){
+    if(Math.random()>.7) orderCount++;
+    document.getElementById('kpi-orders').textContent=String(orderCount);
+  },8000);
+
+})();
+</script>
+</body>
+</html>

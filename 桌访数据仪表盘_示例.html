@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>桌访数据仪表盘 · 2/13-2/15 示例</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #0f1923; color: #e0e0e0; min-height: 100vh; }
+.dashboard { max-width: 1280px; margin: 0 auto; padding: 20px; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.header h1 { font-size: 22px; color: #fff; font-weight: 600; }
+.header .subtitle { font-size: 13px; color: #8eadd4; margin-top: 4px; }
+.header .badge { background: rgba(39,174,96,0.15); color: #27ae60; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+.kpi { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px; text-align: center; }
+.kpi .label { font-size: 11px; color: #8eadd4; margin-bottom: 6px; }
+.kpi .value { font-size: 28px; font-weight: 700; }
+.kpi .trend { font-size: 11px; margin-top: 4px; }
+.kpi .trend.up { color: #27ae60; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 18px; }
+.card h3 { font-size: 14px; color: #fff; margin-bottom: 14px; font-weight: 600; }
+.card h3 .hint { font-size: 11px; color: #8eadd4; font-weight: 400; margin-left: 8px; }
+.chart-wrap { position: relative; height: 260px; }
+
+/* Heatmap */
+.heatmap { width: 100%; border-collapse: collapse; }
+.heatmap th { font-size: 10px; color: #8eadd4; padding: 6px 4px; text-align: center; font-weight: 500; }
+.heatmap th:first-child { text-align: left; width: 110px; }
+.heatmap td { padding: 5px 4px; text-align: center; font-size: 11px; font-weight: 600; border-radius: 3px; }
+.heatmap tr { border-bottom: 1px solid rgba(255,255,255,0.03); }
+.h0 { color: #555; } .h1 { background: rgba(231,76,60,0.1); color: #e8a09a; }
+.h2 { background: rgba(231,76,60,0.2); color: #e88a82; } .h3 { background: rgba(231,76,60,0.35); color: #e87468; }
+.h4 { background: rgba(231,76,60,0.5); color: #fff; } .h5 { background: rgba(231,76,60,0.7); color: #fff; }
+
+/* Distribution bars */
+.dist-row { display: flex; align-items: center; margin-bottom: 8px; }
+.dist-label { width: 100px; font-size: 11px; }
+.dist-bar-wrap { flex: 1; height: 22px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden; display: flex; }
+.dist-seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; }
+.seg-good { background: rgba(39,174,96,0.6); color: #fff; }
+.seg-mid { background: rgba(243,156,18,0.5); color: #fff; }
+.seg-bad { background: rgba(231,76,60,0.6); color: #fff; }
+
+/* Lunch/dinner bars */
+.bar-bg { height: 18px; border-radius: 3px; display: inline-flex; align-items: center; padding-left: 6px; font-size: 10px; font-weight: 600; }
+.bar-lunch { background: rgba(46,134,193,0.4); color: #7ec8e3; }
+.bar-dinner { background: rgba(142,68,173,0.4); color: #c39bd3; }
+
+/* Manager score */
+.mgr-row { display: flex; align-items: center; margin-bottom: 10px; }
+.mgr-name { width: 100px; font-size: 11px; }
+.mgr-bar { height: 20px; border-radius: 3px; display: inline-flex; align-items: center; padding-left: 8px; font-size: 10px; font-weight: 600; }
+.mgr-score { width: 40px; text-align: right; font-size: 12px; font-weight: 700; margin-left: 8px; }
+
+.tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.tab { padding: 5px 14px; border-radius: 16px; font-size: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); color: #8eadd4; }
+.tab.active { background: rgba(46,134,193,0.2); border-color: #2e86c1; color: #fff; }
+.legend { display: flex; gap: 16px; margin-top: 8px; justify-content: center; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #8eadd4; }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+@media (max-width: 768px) { .kpi-row { grid-template-columns: repeat(3, 1fr); } .grid-2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="dashboard">
+  <div class="header">
+    <div><h1>桌访数据仪表盘</h1><div class="subtitle">2026年2月13日 - 2月15日 · 6家门店 · 846条桌访</div></div>
+    <div class="badge">三日连续改善</div>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="label">总桌访数</div><div class="value" style="color:#2e86c1">846</div><div class="trend up">三日合计</div></div>
+    <div class="kpi"><div class="label">平均好评率</div><div class="value" style="color:#27ae60">62%</div><div class="trend up">53→65→68% ↑</div></div>
+    <div class="kpi"><div class="label">总差评数</div><div class="value" style="color:#e74c3c">24</div><div class="trend up">6→14→4 回落</div></div>
+    <div class="kpi"><div class="label">平均评分</div><div class="value" style="color:#f39c12">0.66</div><div class="trend up">0.64→0.67→0.68 ↑</div></div>
+    <div class="kpi"><div class="label">问题解决率</div><div class="value" style="color:#8e44ad">79%</div><div class="trend up">口味偏酸 41→9</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card"><h3>好评率趋势 <span class="hint">按门店</span></h3><div class="chart-wrap"><canvas id="trendGood"></canvas></div></div>
+    <div class="card"><h3>差评数趋势 <span class="hint">按门店</span></h3><div class="chart-wrap"><canvas id="trendBad"></canvas></div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><h3>门店 × 问题 热力图 <span class="hint">三日累计</span></h3><table class="heatmap" id="heatmap"></table></div>
+    <div class="card"><h3>问题消亡曲线 <span class="hint">整改追踪</span></h3><div class="chart-wrap"><canvas id="issueDecay"></canvas></div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>评分分布 <span class="hint">好/中/差占比</span></h3>
+      <div class="tabs" id="distTabs"><div class="tab active" data-day="all">三日汇总</div><div class="tab" data-day="d13">2/13</div><div class="tab" data-day="d14">2/14</div><div class="tab" data-day="d15">2/15</div></div>
+      <div id="distChart"></div>
+    </div>
+    <div class="card"><h3>午餐 vs 晚餐 <span class="hint">2/15 各店对比</span></h3><div id="ldChart"></div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><h3>品牌对比 <span class="hint">宁桂杏 vs 野百灵</span></h3><div class="chart-wrap"><canvas id="brandChart"></canvas></div></div>
+    <div class="card"><h3>门店综合评分 <span class="hint">三日加权</span></h3><div id="mgrChart" style="margin-top:8px"></div></div>
+  </div>
+</div>
+
+<script>
+const COLORS = { '宁桂杏上马店':'#27ae60','野百灵上马店':'#2e86c1','宁桂杏1958店':'#f39c12','宁桂杏江油店':'#e67e22','野百灵同森店':'#8e44ad','野百灵1958店':'#e74c3c' };
+const DATA = {
+  'd13': { '宁桂杏上马店':{count:59,good:42,mid:17,bad:0,lunch:22,dinner:37,avg:0.71},'野百灵上马店':{count:41,good:21,mid:20,bad:0,lunch:15,dinner:26,avg:0.64},'宁桂杏1958店':{count:41,good:21,mid:18,bad:2,lunch:16,dinner:25,avg:0.62},'宁桂杏江油店':{count:24,good:9,mid:14,bad:1,lunch:9,dinner:15,avg:0.61},'野百灵同森店':{count:23,good:10,mid:13,bad:0,lunch:9,dinner:14,avg:0.61},'野百灵1958店':{count:17,good:6,mid:8,bad:3,lunch:6,dinner:11,avg:0.56} },
+  'd14': { '宁桂杏上马店':{count:108,good:77,mid:31,bad:0,lunch:39,dinner:69,avg:0.70},'野百灵上马店':{count:61,good:44,mid:15,bad:2,lunch:19,dinner:42,avg:0.66},'宁桂杏1958店':{count:57,good:40,mid:16,bad:1,lunch:21,dinner:36,avg:0.68},'宁桂杏江油店':{count:77,good:51,mid:23,bad:3,lunch:24,dinner:53,avg:0.67},'野百灵同森店':{count:43,good:26,mid:17,bad:0,lunch:15,dinner:28,avg:0.66},'野百灵1958店':{count:40,good:13,mid:19,bad:8,lunch:17,dinner:23,avg:0.56} },
+  'd15': { '宁桂杏上马店':{count:78,good:65,mid:12,bad:1,lunch:26,dinner:52,avg:0.71},'野百灵上马店':{count:46,good:36,mid:10,bad:0,lunch:18,dinner:28,avg:0.70},'宁桂杏1958店':{count:40,good:27,mid:12,bad:1,lunch:15,dinner:25,avg:0.68},'宁桂杏江油店':{count:50,good:28,mid:22,bad:0,lunch:17,dinner:33,avg:0.65},'野百灵同森店':{count:22,good:10,mid:11,bad:1,lunch:9,dinner:13,avg:0.62},'野百灵1958店':{count:19,good:8,mid:10,bad:1,lunch:4,dinner:15,avg:0.61} }
+};
+const STORE_THEMES = {
+  '宁桂杏上马店':{'\u53e3\u5473\u504f\u9178':3,'\u5206\u91cf\u95ee\u9898':19,'\u4e0a\u83dc\u6162':6,'\u4ef7\u683c\u8d35':12,'\u53e3\u5473\u504f\u8fa3':9,'\u53e3\u5473\u504f\u54b8':1,'\u53e3\u5473\u504f\u6de1':0,'\u73af\u5883\u95ee\u9898':1,'\u83dc\u54c1\u8d28\u91cf':3},
+  '野百灵上马店':{'\u53e3\u5473\u504f\u9178':45,'\u5206\u91cf\u95ee\u9898':9,'\u4e0a\u83dc\u6162':7,'\u4ef7\u683c\u8d35':2,'\u53e3\u5473\u504f\u8fa3':6,'\u53e3\u5473\u504f\u54b8':7,'\u53e3\u5473\u504f\u6de1':2,'\u73af\u5883\u95ee\u9898':0,'\u83dc\u54c1\u8d28\u91cf':0},
+  '宁桂杏1958店':{'\u53e3\u5473\u504f\u9178':2,'\u5206\u91cf\u95ee\u9898':19,'\u4e0a\u83dc\u6162':7,'\u4ef7\u683c\u8d35':4,'\u53e3\u5473\u504f\u8fa3':1,'\u53e3\u5473\u504f\u54b8':0,'\u53e3\u5473\u504f\u6de1':0,'\u73af\u5883\u95ee\u9898':0,'\u83dc\u54c1\u8d28\u91cf':5},
+  '宁桂杏江油店':{'\u53e3\u5473\u504f\u9178':1,'\u5206\u91cf\u95ee\u9898':3,'\u4e0a\u83dc\u6162':5,'\u4ef7\u683c\u8d35':2,'\u53e3\u5473\u504f\u8fa3':0,'\u53e3\u5473\u504f\u54b8':2,'\u53e3\u5473\u504f\u6de1':2,'\u73af\u5883\u95ee\u9898':4,'\u83dc\u54c1\u8d28\u91cf':1},
+  '野百灵同森店':{'\u53e3\u5473\u504f\u9178':5,'\u5206\u91cf\u95ee\u9898':2,'\u4e0a\u83dc\u6162':6,'\u4ef7\u683c\u8d35':2,'\u53e3\u5473\u504f\u8fa3':2,'\u53e3\u5473\u504f\u54b8':6,'\u53e3\u5473\u504f\u6de1':6,'\u73af\u5883\u95ee\u9898':2,'\u83dc\u54c1\u8d28\u91cf':2},
+  '野百灵1958店':{'\u53e3\u5473\u504f\u9178':22,'\u5206\u91cf\u95ee\u9898':10,'\u4e0a\u83dc\u6162':2,'\u4ef7\u683c\u8d35':1,'\u53e3\u5473\u504f\u8fa3':9,'\u53e3\u5473\u504f\u54b8':6,'\u53e3\u5473\u504f\u6de1':2,'\u73af\u5883\u95ee\u9898':2,'\u83dc\u54c1\u8d28\u91cf':5}
+};
+const DAYS = ['2/13','2/14','2/15'];
+const DAY_KEYS = ['d13','d14','d15'];
+const STORES = Object.keys(COLORS);
+
+Chart.defaults.color = '#8eadd4';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = "-apple-system, 'PingFang SC', sans-serif";
+Chart.defaults.font.size = 11;
+
+// Good rate trend
+new Chart(document.getElementById('trendGood'), {
+  type: 'line',
+  data: { labels: DAYS, datasets: STORES.map(s => ({ label: s.replace('\u5e97',''), data: DAY_KEYS.map(d => Math.round(DATA[d][s].good/DATA[d][s].count*100)), borderColor: COLORS[s], backgroundColor: COLORS[s]+'20', tension: 0.3, pointRadius: 4, borderWidth: 2 })) },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, font: { size: 10 } } } }, scales: { y: { min: 20, max: 90, ticks: { callback: v => v+'%' } } } }
+});
+
+// Bad trend stacked
+new Chart(document.getElementById('trendBad'), {
+  type: 'bar',
+  data: { labels: DAYS, datasets: STORES.map(s => ({ label: s.replace('\u5e97',''), data: DAY_KEYS.map(d => DATA[d][s].bad), backgroundColor: COLORS[s]+'aa', borderRadius: 3 })) },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, font: { size: 10 } } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
+});
+
+// Heatmap - built with DOM methods
+(function() {
+  var tbl = document.getElementById('heatmap');
+  var issues = ['\u53e3\u5473\u504f\u9178','\u5206\u91cf\u95ee\u9898','\u4e0a\u83dc\u6162','\u53e3\u5473\u504f\u8fa3','\u53e3\u5473\u504f\u54b8','\u53e3\u5473\u504f\u6de1','\u73af\u5883\u95ee\u9898','\u4ef7\u683c\u8d35','\u83dc\u54c1\u8d28\u91cf'];
+  var hRow = document.createElement('tr');
+  var hTh = document.createElement('th'); hRow.appendChild(hTh);
+  issues.forEach(function(i) { var th = document.createElement('th'); th.textContent = i; hRow.appendChild(th); });
+  tbl.appendChild(hRow);
+  STORES.forEach(function(s) {
+    var row = document.createElement('tr');
+    var nameTh = document.createElement('th'); nameTh.textContent = s.replace('\u5e97',''); nameTh.style.color = COLORS[s]; row.appendChild(nameTh);
+    issues.forEach(function(i) {
+      var td = document.createElement('td');
+      var v = STORE_THEMES[s][i] || 0;
+      td.textContent = v || '\u00b7';
+      td.className = v === 0 ? 'h0' : v <= 2 ? 'h1' : v <= 5 ? 'h2' : v <= 10 ? 'h3' : v <= 20 ? 'h4' : 'h5';
+      row.appendChild(td);
+    });
+    tbl.appendChild(row);
+  });
+})();
+
+// Issue decay
+new Chart(document.getElementById('issueDecay'), {
+  type: 'line',
+  data: { labels: DAYS, datasets: [
+    { label: '\u53e3\u5473\u504f\u9178', data: [41,28,9], borderColor: '#e74c3c', borderWidth: 2.5, tension: 0.3, pointRadius: 5 },
+    { label: '\u5206\u91cf\u95ee\u9898', data: [50,8,4], borderColor: '#f39c12', borderWidth: 2.5, tension: 0.3, pointRadius: 5 },
+    { label: '\u4e0a\u83dc\u6162', data: [27,3,3], borderColor: '#8e44ad', borderWidth: 2.5, tension: 0.3, pointRadius: 5 },
+    { label: '\u53e3\u5473\u504f\u8fa3', data: [13,9,5], borderColor: '#2e86c1', borderWidth: 2, tension: 0.3, pointRadius: 4, borderDash: [4,4] },
+    { label: '\u53e3\u5473\u504f\u54b8', data: [9,7,6], borderColor: '#27ae60', borderWidth: 2, tension: 0.3, pointRadius: 4, borderDash: [4,4] }
+  ]},
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, font: { size: 10 } } } }, scales: { y: { beginAtZero: true } } }
+});
+
+// Score distribution
+var distSets = {};
+(function() {
+  distSets['all'] = {}; DAY_KEYS.forEach(function(d) { distSets[d] = {}; });
+  STORES.forEach(function(s) {
+    var g = 0, m = 0, b = 0, t = 0;
+    DAY_KEYS.forEach(function(d) { g += DATA[d][s].good; m += DATA[d][s].mid; b += DATA[d][s].bad; t += DATA[d][s].count; distSets[d][s] = { good: DATA[d][s].good, mid: DATA[d][s].mid, bad: DATA[d][s].bad, total: DATA[d][s].count }; });
+    distSets['all'][s] = { good: g, mid: m, bad: b, total: t };
+  });
+})();
+
+function renderDist(day) {
+  var el = document.getElementById('distChart');
+  while (el.firstChild) el.removeChild(el.firstChild);
+  STORES.forEach(function(s) {
+    var d = distSets[day][s];
+    var gp = Math.round(d.good/d.total*100);
+    var mp = Math.round(d.mid/d.total*100);
+    var bp = Math.round(d.bad/d.total*100);
+    var row = document.createElement('div'); row.className = 'dist-row';
+    var lbl = document.createElement('div'); lbl.className = 'dist-label'; lbl.style.color = COLORS[s]; lbl.textContent = s.replace('\u5e97',''); row.appendChild(lbl);
+    var wrap = document.createElement('div'); wrap.className = 'dist-bar-wrap';
+    var sg = document.createElement('div'); sg.className = 'dist-seg seg-good'; sg.style.width = gp+'%'; sg.textContent = gp>8 ? gp+'%' : ''; wrap.appendChild(sg);
+    var sm = document.createElement('div'); sm.className = 'dist-seg seg-mid'; sm.style.width = mp+'%'; sm.textContent = mp>8 ? mp+'%' : ''; wrap.appendChild(sm);
+    var sb = document.createElement('div'); sb.className = 'dist-seg seg-bad'; sb.style.width = bp+'%'; sb.textContent = bp>5 ? bp+'%' : ''; wrap.appendChild(sb);
+    row.appendChild(wrap); el.appendChild(row);
+  });
+  var legend = document.createElement('div'); legend.className = 'legend';
+  [['rgba(39,174,96,0.6)','\u597d\u8bc4\u22650.7'],['rgba(243,156,18,0.5)','\u4e2d\u8bc4'],['rgba(231,76,60,0.6)','\u5dee\u8bc4<0.4']].forEach(function(pair) {
+    var item = document.createElement('div'); item.className = 'legend-item';
+    var dot = document.createElement('div'); dot.className = 'legend-dot'; dot.style.background = pair[0]; item.appendChild(dot);
+    var txt = document.createTextNode(pair[1]); item.appendChild(txt); legend.appendChild(item);
+  });
+  el.appendChild(legend);
+}
+renderDist('all');
+
+document.querySelectorAll('#distTabs .tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('#distTabs .tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    renderDist(tab.dataset.day);
+  });
+});
+
+// Lunch vs Dinner
+(function() {
+  var el = document.getElementById('ldChart');
+  STORES.forEach(function(s) {
+    var d = DATA['d15'][s];
+    var row = document.createElement('div'); row.style.cssText = 'display:flex;align-items:center;margin-bottom:8px';
+    var nm = document.createElement('div'); nm.style.cssText = 'width:100px;font-size:11px;color:'+COLORS[s]; nm.textContent = s.replace('\u5e97',''); row.appendChild(nm);
+    var bars = document.createElement('div'); bars.style.cssText = 'flex:1;display:flex;gap:4px';
+    var bl = document.createElement('div'); bl.className = 'bar-bg bar-lunch'; bl.style.width = Math.round(d.lunch/d.count*100*2.5)+'px'; bl.textContent = d.lunch; bars.appendChild(bl);
+    var bd = document.createElement('div'); bd.className = 'bar-bg bar-dinner'; bd.style.width = Math.round(d.dinner/d.count*100*2.5)+'px'; bd.textContent = d.dinner; bars.appendChild(bd);
+    row.appendChild(bars); el.appendChild(row);
+  });
+  var legend = document.createElement('div'); legend.className = 'legend'; legend.style.marginTop = '12px';
+  [['rgba(46,134,193,0.6)','\u5348\u9910'],['rgba(142,68,173,0.6)','\u665a\u9910']].forEach(function(pair) {
+    var item = document.createElement('div'); item.className = 'legend-item';
+    var dot = document.createElement('div'); dot.className = 'legend-dot'; dot.style.background = pair[0]; item.appendChild(dot);
+    item.appendChild(document.createTextNode(pair[1])); legend.appendChild(item);
+  });
+  el.appendChild(legend);
+  var note = document.createElement('p'); note.style.cssText = 'font-size:11px;color:#8eadd4;margin-top:10px;text-align:center';
+  note.textContent = '\u665a\u9910\u5ba2\u6d41\u7ea6\u4e3a\u5348\u9910\u76841.8\u500d\uff0c\u91ce\u767e\u7075 1958\u5348\u9910\u4ec54\u684c\u9700\u5173\u6ce8'; el.appendChild(note);
+})();
+
+// Brand comparison
+var brandNGX = DAY_KEYS.map(function(d) { var g=0,t=0; ['\u5b81\u6842\u674f\u4e0a\u9a6c\u5e97','\u5b81\u6842\u674f1958\u5e97','\u5b81\u6842\u674f\u6c5f\u6cb9\u5e97'].forEach(function(s){g+=DATA[d][s].good;t+=DATA[d][s].count}); return Math.round(g/t*100); });
+var brandYBL = DAY_KEYS.map(function(d) { var g=0,t=0; ['\u91ce\u767e\u7075\u4e0a\u9a6c\u5e97','\u91ce\u767e\u70751958\u5e97','\u91ce\u767e\u7075\u540c\u68ee\u5e97'].forEach(function(s){g+=DATA[d][s].good;t+=DATA[d][s].count}); return Math.round(g/t*100); });
+new Chart(document.getElementById('brandChart'), {
+  type: 'bar',
+  data: { labels: DAYS, datasets: [ { label: '\u5b81\u6842\u674f', data: brandNGX, backgroundColor: '#27ae60aa', borderRadius: 4 }, { label: '\u91ce\u767e\u7075', data: brandYBL, backgroundColor: '#e74c3caa', borderRadius: 4 } ]},
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } }, tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label+': '+ctx.raw+'%'; } } } }, scales: { y: { min: 30, max: 85, ticks: { callback: function(v) { return v+'%'; } } } } }
+});
+
+// Store composite score
+(function() {
+  var el = document.getElementById('mgrChart');
+  var scores = {};
+  STORES.forEach(function(s) {
+    var total = 0, goodSum = 0, avgSum = 0, badSum = 0;
+    DAY_KEYS.forEach(function(d) { total += DATA[d][s].count; goodSum += DATA[d][s].good; avgSum += DATA[d][s].avg * DATA[d][s].count; badSum += DATA[d][s].bad; });
+    var goodRate = goodSum / total;
+    var avgScore = avgSum / total;
+    var badPenalty = Math.max(0, 1 - badSum / 15);
+    scores[s] = Math.round(goodRate * 40 + avgScore * 40 + badPenalty * 20);
+  });
+  var sorted = Object.entries(scores).sort(function(a,b) { return b[1]-a[1]; });
+  sorted.forEach(function(pair, i) {
+    var s = pair[0], score = pair[1];
+    var color = score >= 65 ? '#27ae60' : score >= 50 ? '#f39c12' : '#e74c3c';
+    var row = document.createElement('div'); row.className = 'mgr-row';
+    var nm = document.createElement('div'); nm.className = 'mgr-name'; nm.style.color = COLORS[s]; nm.textContent = s.replace('\u5e97','') + (i===0?' \ud83c\udfc6':''); row.appendChild(nm);
+    var bw = document.createElement('div'); bw.style.cssText = 'flex:1;display:flex;gap:4px;align-items:center';
+    var bar = document.createElement('div'); bar.className = 'mgr-bar'; bar.style.width = (score*2.6)+'px'; bar.style.background = color+'40'; bar.style.color = color; bar.textContent = score; bw.appendChild(bar);
+    row.appendChild(bw);
+    var sc = document.createElement('div'); sc.className = 'mgr-score'; sc.style.color = color; sc.textContent = score+'\u5206'; row.appendChild(sc);
+    el.appendChild(row);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>桌访反馈仪表盘 — 有点东西</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&family=DM+Mono:wght@400;500&family=Fraunces:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#faf9f7;--bg-card:#fff;--bg-deep:#f3f1ee;--bg-hover:#f7f5f2;
+  --border:#e8e5df;--border-strong:#d4d0c8;
+  --teal:#0d9488;--teal-light:#ccfbf1;--teal-dim:#134e4a;
+  --rose:#e11d48;--rose-light:#fff1f2;--rose-dim:#881337;
+  --amber:#d97706;--amber-light:#fef3c7;--amber-dim:#92400e;
+  --indigo:#4f46e5;--indigo-light:#eef2ff;--indigo-dim:#3730a3;
+  --slate:#64748b;--slate-light:#f1f5f9;
+  --green:#16a34a;--green-light:#dcfce7;
+  --text:#1c1917;--text-secondary:#57534e;--text-muted:#a8a29e;
+  --font-body:'Noto Sans SC',system-ui,sans-serif;
+  --font-mono:'DM Mono',monospace;
+  --font-display:'Fraunces',serif;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.04);
+  --shadow:0 2px 8px rgba(0,0,0,.06);
+  --shadow-lg:0 8px 24px rgba(0,0,0,.08);
+}
+html{font-size:14px;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh}
+
+/* Header */
+.header{background:var(--bg-card);border-bottom:1px solid var(--border);padding:0 2rem;position:sticky;top:0;z-index:100}
+.header-inner{max-width:1520px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px}
+.brand{display:flex;align-items:center;gap:.85rem}
+.brand-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--teal),#2dd4bf);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:15px;font-family:var(--font-display);letter-spacing:-1px}
+.brand h1{font-size:1.05rem;font-weight:700;color:var(--text);letter-spacing:.01em}
+.brand h1 span{color:var(--text-muted);font-weight:400;margin-left:.4rem;font-size:.8rem}
+.header-right{display:flex;align-items:center;gap:1.25rem}
+.header-date{font-family:var(--font-mono);font-size:.82rem;color:var(--text-secondary);background:var(--bg-deep);padding:4px 12px;border-radius:8px}
+.brand-tags{display:flex;gap:.4rem}
+.tag{padding:3px 10px;border-radius:6px;font-size:.68rem;font-weight:600;letter-spacing:.03em}
+.tag-ylb{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+.tag-ngx{background:#ffedd5;color:#9a3412;border:1px solid #fed7aa}
+.period-select{font-family:var(--font-body);font-size:.8rem;padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);cursor:pointer;outline:none}
+.period-select:focus{border-color:var(--teal)}
+
+/* Layout */
+.dashboard{max-width:1520px;margin:0 auto;padding:1.5rem 2rem 3rem}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:.85rem;margin-bottom:1.25rem}
+.kpi{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.25rem;transition:all .25s;box-shadow:var(--shadow-sm)}
+.kpi:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
+.kpi-label{font-size:.75rem;color:var(--text-muted);font-weight:500}
+.kpi-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.kpi-val{font-family:var(--font-mono);font-size:1.75rem;font-weight:700;line-height:1;margin-bottom:.3rem}
+.kpi-trend{font-size:.7rem;font-family:var(--font-mono);display:flex;align-items:center;gap:.25rem}
+.kpi-trend.good{color:var(--green)}.kpi-trend.bad{color:var(--rose)}
+.kpi-sub{color:var(--text-muted);font-size:.7rem}
+
+/* Grid */
+.row{display:grid;gap:.85rem;margin-bottom:.85rem}
+.row-2{grid-template-columns:1fr 1fr}
+.row-3{grid-template-columns:1fr 1fr 1fr}
+.row-2-1{grid-template-columns:5fr 3fr}
+.row-1-2{grid-template-columns:3fr 5fr}
+
+/* Panel */
+.panel{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.15rem 1.35rem;box-shadow:var(--shadow-sm)}
+.panel:hover{box-shadow:var(--shadow)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.panel-title{font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:.45rem}
+.panel-badge{font-size:.62rem;padding:2px 8px;border-radius:6px;font-weight:600;font-family:var(--font-mono)}
+
+/* Chart */
+.chart-box{position:relative;height:220px}
+.chart-box-lg{position:relative;height:260px}
+
+/* Feedback cards */
+.fb-list{display:flex;flex-direction:column;gap:.55rem;max-height:360px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.fb-card{padding:.7rem .85rem;border-radius:10px;background:var(--bg);border:1px solid var(--border);transition:all .2s}
+.fb-card:hover{border-color:var(--border-strong);background:var(--bg-hover)}
+.fb-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem}
+.fb-store{font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:5px}
+.fb-time{font-size:.68rem;color:var(--text-muted);font-family:var(--font-mono)}
+.fb-content{font-size:.82rem;color:var(--text-secondary);line-height:1.5;margin-bottom:.4rem}
+.fb-footer{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.fb-tag{font-size:.62rem;padding:2px 7px;border-radius:4px;font-weight:500}
+.fb-tag.pos{background:var(--green-light);color:var(--green)}
+.fb-tag.neg{background:var(--rose-light);color:var(--rose)}
+.fb-tag.sug{background:var(--amber-light);color:var(--amber)}
+.fb-tag.neu{background:var(--slate-light);color:var(--slate)}
+.fb-sentiment{display:flex;align-items:center;gap:.25rem;font-size:.68rem;font-weight:600;margin-left:auto}
+
+/* Score ring */
+.score-ring-wrap{display:flex;align-items:center;justify-content:center;padding:1rem 0}
+.score-ring{position:relative;width:140px;height:140px}
+.score-ring svg{transform:rotate(-90deg)}
+.score-ring-bg{fill:none;stroke:var(--bg-deep);stroke-width:10}
+.score-ring-fg{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .8s ease}
+.score-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-num{font-family:var(--font-mono);font-size:2rem;font-weight:700;line-height:1}
+.score-label{font-size:.7rem;color:var(--text-muted);margin-top:2px}
+
+/* Store bars */
+.store-row{display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid var(--bg-deep)}
+.store-row:last-child{border-bottom:none}
+.store-name{font-size:.8rem;font-weight:500;min-width:80px}
+.store-bar-wrap{flex:1;height:8px;background:var(--bg-deep);border-radius:4px;overflow:hidden}
+.store-bar{height:100%;border-radius:4px;transition:width .6s ease}
+.store-score{font-family:var(--font-mono);font-size:.8rem;font-weight:600;min-width:40px;text-align:right}
+
+/* Issue table */
+.issue-list{display:flex;flex-direction:column;gap:.4rem}
+.issue-row{display:grid;grid-template-columns:1fr 60px 80px;align-items:center;padding:.5rem .6rem;border-radius:8px;background:var(--bg)}
+.issue-name{font-size:.8rem;font-weight:500}
+.issue-count{font-family:var(--font-mono);font-size:.78rem;text-align:center;font-weight:600}
+.issue-bar-mini{height:4px;border-radius:2px;background:var(--bg-deep);overflow:hidden}
+.issue-bar-fill{height:100%;border-radius:2px}
+
+/* Action items */
+.action-list{display:flex;flex-direction:column;gap:.5rem}
+.action-item{display:flex;align-items:flex-start;gap:.6rem;padding:.6rem .75rem;border-radius:10px;background:var(--bg);border:1px solid var(--border)}
+.action-priority{width:6px;min-height:32px;border-radius:3px;flex-shrink:0;margin-top:2px}
+.action-priority.high{background:var(--rose)}
+.action-priority.mid{background:var(--amber)}
+.action-priority.low{background:var(--teal)}
+.action-body{flex:1}
+.action-title{font-size:.82rem;font-weight:600;margin-bottom:.2rem}
+.action-desc{font-size:.72rem;color:var(--text-muted);line-height:1.4}
+.action-meta{display:flex;align-items:center;gap:.5rem;margin-top:.3rem}
+.action-owner{font-size:.65rem;padding:2px 7px;border-radius:4px;background:var(--indigo-light);color:var(--indigo);font-weight:500}
+.action-due{font-size:.65rem;color:var(--text-muted);font-family:var(--font-mono)}
+
+/* Wordcloud substitute - tag cloud */
+.keyword-cloud{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;justify-content:center;padding:.5rem 0}
+.kw{padding:4px 12px;border-radius:20px;font-weight:500;cursor:default;transition:all .2s;border:1px solid transparent}
+.kw:hover{transform:scale(1.05)}
+.kw-xl{font-size:1.05rem}.kw-lg{font-size:.9rem}.kw-md{font-size:.78rem}.kw-sm{font-size:.68rem}
+
+/* Responsive */
+@media(max-width:1200px){.kpi-row{grid-template-columns:repeat(3,1fr)}.row-2,.row-3,.row-2-1,.row-1-2{grid-template-columns:1fr}}
+@media(max-width:768px){.kpi-row{grid-template-columns:1fr 1fr}.dashboard{padding:1rem}.brand-tags{display:none}}
+
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.fade-in{animation:fadeIn .5s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}.d5{animation-delay:.25s}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-icon">桌</div>
+      <h1>桌访反馈中心<span>Table Visit Insights</span></h1>
+      <div class="brand-tags">
+        <span class="tag tag-ylb">野百灵</span>
+        <span class="tag tag-ngx">宁桂杏</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <select class="period-select" id="periodSelect">
+        <option value="week" selected>本周 (2/10 - 2/17)</option>
+        <option value="month">本月</option>
+        <option value="quarter">本季度</option>
+      </select>
+      <div class="header-date" id="headerDate">2026-02-17</div>
+    </div>
+  </div>
+</header>
+
+<main class="dashboard">
+
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <div class="kpi fade-in">
+      <div class="kpi-top">
+        <span class="kpi-label">桌访总量</span>
+        <div class="kpi-icon" style="background:var(--teal-light)">📋</div>
+      </div>
+      <div class="kpi-val" style="color:var(--teal)">247</div>
+      <div class="kpi-trend good">↑ 18% <span class="kpi-sub">vs 上周</span></div>
+    </div>
+    <div class="kpi fade-in d1">
+      <div class="kpi-top">
+        <span class="kpi-label">满意度</span>
+        <div class="kpi-icon" style="background:var(--green-light)">😊</div>
+      </div>
+      <div class="kpi-val" style="color:var(--green)">87.3<span style="font-size:.9rem">%</span></div>
+      <div class="kpi-trend good">↑ 2.1% <span class="kpi-sub">vs 上周</span></div>
+    </div>
+    <div class="kpi fade-in d2">
+      <div class="kpi-top">
+        <span class="kpi-label">差评提及</span>
+        <div class="kpi-icon" style="background:var(--rose-light)">⚠️</div>
+      </div>
+      <div class="kpi-val" style="color:var(--rose)">31</div>
+      <div class="kpi-trend bad">↑ 5条 <span class="kpi-sub">需跟进</span></div>
+    </div>
+    <div class="kpi fade-in d3">
+      <div class="kpi-top">
+        <span class="kpi-label">问题解决率</span>
+        <div class="kpi-icon" style="background:var(--indigo-light)">✅</div>
+      </div>
+      <div class="kpi-val" style="color:var(--indigo)">76<span style="font-size:.9rem">%</span></div>
+      <div class="kpi-trend good">↑ 8% <span class="kpi-sub">持续改善</span></div>
+    </div>
+    <div class="kpi fade-in d4">
+      <div class="kpi-top">
+        <span class="kpi-label">NPS 净推荐值</span>
+        <div class="kpi-icon" style="background:var(--amber-light)">⭐</div>
+      </div>
+      <div class="kpi-val" style="color:var(--amber)">+42</div>
+      <div class="kpi-trend good">↑ 6pts <span class="kpi-sub">良好</span></div>
+    </div>
+  </div>
+
+  <!-- Row 2: Satisfaction Score + Trend -->
+  <div class="row row-1-2 fade-in d3">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">🎯 综合满意度</span>
+        <span class="panel-badge" style="background:var(--green-light);color:var(--green)">良好</span>
+      </div>
+      <div class="score-ring-wrap">
+        <div class="score-ring">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle class="score-ring-bg" cx="70" cy="70" r="58"/>
+            <circle class="score-ring-fg" cx="70" cy="70" r="58"
+              stroke="#16a34a"
+              stroke-dasharray="364.42"
+              stroke-dashoffset="46.3"/>
+          </svg>
+          <div class="score-center">
+            <span class="score-num" style="color:var(--green)">87.3</span>
+            <span class="score-label">满意度</span>
+          </div>
+        </div>
+      </div>
+      <div id="satisfactionBreakdown" style="display:flex;justify-content:center;gap:1.5rem;font-size:.75rem"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">📈 满意度趋势</span>
+        <span class="panel-badge" style="background:var(--teal-light);color:var(--teal)">近4周</span>
+      </div>
+      <div class="chart-box-lg"><canvas id="trendChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Row 3: Feedback List + Sentiment Pie -->
+  <div class="row row-2-1 fade-in d4">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">💬 近期桌访记录</span>
+        <span class="panel-badge" style="background:var(--bg-deep);color:var(--text-secondary)">最新 12 条</span>
+      </div>
+      <div class="fb-list" id="fbList"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">🧠 情感分布</span>
+        <span class="panel-badge" style="background:var(--amber-light);color:var(--amber)">本周</span>
+      </div>
+      <div class="chart-box"><canvas id="sentimentChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Row 4: Store Compare + Issue Ranking + Keywords -->
+  <div class="row row-3 fade-in d5">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">🏪 门店满意度对比</span>
+      </div>
+      <div id="storeCompare"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">🔍 问题分类排行</span>
+        <span class="panel-badge" style="background:var(--rose-light);color:var(--rose)">TOP 7</span>
+      </div>
+      <div class="chart-box"><canvas id="issueChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">☁️ 高频关键词</span>
+      </div>
+      <div class="keyword-cloud" id="kwCloud"></div>
+    </div>
+  </div>
+
+  <!-- Row 5: Action Items + Category Radar -->
+  <div class="row row-2 fade-in d5">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">📌 待跟进事项</span>
+        <span class="panel-badge" style="background:var(--rose-light);color:var(--rose)">3 项紧急</span>
+      </div>
+      <div class="action-list" id="actionList"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">🕸️ 各维度评分</span>
+        <span class="panel-badge" style="background:var(--indigo-light);color:var(--indigo)">雷达图</span>
+      </div>
+      <div class="chart-box-lg"><canvas id="radarChart"></canvas></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  function el(tag,attrs,children){
+    var e=document.createElement(tag);
+    if(attrs){Object.keys(attrs).forEach(function(k){
+      if(k==='className')e.className=attrs[k];
+      else if(k==='style')e.style.cssText=attrs[k];
+      else if(k==='textContent')e.textContent=attrs[k];
+      else e.setAttribute(k,attrs[k]);
+    })}
+    if(children){children.forEach(function(c){
+      if(typeof c==='string')e.appendChild(document.createTextNode(c));
+      else if(c)e.appendChild(c);
+    })}
+    return e;
+  }
+
+  // Satisfaction breakdown
+  var satData=[{label:'非常满意',pct:'42%',color:'var(--green)'},{label:'满意',pct:'45.3%',color:'var(--teal)'},{label:'一般',pct:'8.5%',color:'var(--amber)'},{label:'不满意',pct:'4.2%',color:'var(--rose)'}];
+  var satWrap=document.getElementById('satisfactionBreakdown');
+  satData.forEach(function(s){
+    var item=el('div',{style:'text-align:center'},[
+      el('div',{style:'font-family:DM Mono;font-weight:700;color:'+s.color+';font-size:.9rem',textContent:s.pct}),
+      el('div',{style:'color:var(--text-muted);margin-top:2px',textContent:s.label})
+    ]);
+    satWrap.appendChild(item);
+  });
+
+  // Trend Chart
+  new Chart(document.getElementById('trendChart'),{
+    type:'line',
+    data:{
+      labels:['1/20','1/27','2/3','2/10','2/17'],
+      datasets:[
+        {label:'野百灵',data:[82.5,84.1,85.8,86.2,88.5],borderColor:'#d97706',backgroundColor:'rgba(217,119,6,.06)',fill:true,tension:.35,pointBackgroundColor:'#d97706',pointRadius:5,pointHoverRadius:7,borderWidth:2.5},
+        {label:'宁桂杏',data:[80.2,81.8,83.5,85.0,86.1],borderColor:'#0d9488',backgroundColor:'rgba(13,148,136,.06)',fill:true,tension:.35,pointBackgroundColor:'#0d9488',pointRadius:5,pointHoverRadius:7,borderWidth:2.5}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:'#57534e',usePointStyle:true,pointStyle:'circle',padding:16,font:{family:'Noto Sans SC',size:12}}},tooltip:{backgroundColor:'#1c1917',titleColor:'#fafaf9',bodyColor:'#a8a29e',padding:10,cornerRadius:8,bodyFont:{family:'DM Mono'},callbacks:{label:function(c){return'  '+c.dataset.label+': '+c.raw+'%'}}}},
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,.04)',drawBorder:false},ticks:{color:'#a8a29e',font:{family:'DM Mono',size:11}}},
+        y:{min:78,max:92,grid:{color:'rgba(0,0,0,.04)',drawBorder:false},ticks:{color:'#a8a29e',font:{family:'DM Mono',size:11},callback:function(v){return v+'%'}}}
+      }
+    }
+  });
+
+  // Feedback List
+  var feedbacks=[
+    {store:'上马·野百灵',storeColor:'background:#fef3c7;color:#92400e',time:'2/17 12:30',content:'菜品口味很好，特别是桂花糖藕，甜度适中。但上菜速度有点慢，等了快20分钟。',tags:[{t:'口味好评',c:'pos'},{t:'上菜慢',c:'neg'}],sentiment:'😊 积极',sentColor:'var(--green)'},
+    {store:'上马·宁桂杏',storeColor:'background:#ffedd5;color:#9a3412',time:'2/17 12:15',content:'环境很好，服务态度也不错。就是空调温度太低了，坐靠窗位置有点冷。',tags:[{t:'环境好',c:'pos'},{t:'温度问题',c:'sug'}],sentiment:'😊 积极',sentColor:'var(--green)'},
+    {store:'虹桥·野百灵',storeColor:'background:#fef3c7;color:#92400e',time:'2/17 11:45',content:'红烧肉偏咸了，跟上次来的口味不太一样。希望能保持稳定。',tags:[{t:'口味不稳',c:'neg'},{t:'复购客',c:'neu'}],sentiment:'😐 中性',sentColor:'var(--amber)'},
+    {store:'上马·野百灵',storeColor:'background:#fef3c7;color:#92400e',time:'2/17 11:30',content:'第一次来，朋友推荐的。烤鸡确实好吃！会再来，希望能有会员优惠。',tags:[{t:'新客',c:'neu'},{t:'烤鸡好评',c:'pos'},{t:'会员需求',c:'sug'}],sentiment:'😊 积极',sentColor:'var(--green)'},
+    {store:'静安·宁桂杏',storeColor:'background:#ffedd5;color:#9a3412',time:'2/16 19:20',content:'服务员态度很好，主动帮忙推荐菜品。就是等位时间太长了，将近40分钟。',tags:[{t:'服务好',c:'pos'},{t:'等位久',c:'neg'}],sentiment:'😐 中性',sentColor:'var(--amber)'},
+    {store:'徐汇·野百灵',storeColor:'background:#fef3c7;color:#92400e',time:'2/16 18:50',content:'今天点的酸菜鱼不够辣，跟菜单上写的重辣差距很大。而且鱼刺比较多。',tags:[{t:'口味差距',c:'neg'},{t:'菜品问题',c:'neg'}],sentiment:'😞 消极',sentColor:'var(--rose)'},
+    {store:'上马·宁桂杏',storeColor:'background:#ffedd5;color:#9a3412',time:'2/16 13:10',content:'宁桂杏拼盘很精致，适合拍照打卡。价格也还可以接受，性价比不错。',tags:[{t:'颜值高',c:'pos'},{t:'性价比',c:'pos'}],sentiment:'😊 积极',sentColor:'var(--green)'},
+    {store:'虹桥·野百灵',storeColor:'background:#fef3c7;color:#92400e',time:'2/16 12:40',content:'午市套餐选择太少了，就三个选项。能不能多加几个？带小孩来没什么儿童餐。',tags:[{t:'菜单建议',c:'sug'},{t:'儿童需求',c:'sug'}],sentiment:'😐 中性',sentColor:'var(--amber)'},
+    {store:'上马·野百灵',storeColor:'background:#fef3c7;color:#92400e',time:'2/15 19:30',content:'很满意！每道菜都很精致，龙井虾仁是我吃过最好的。下次带家人再来。',tags:[{t:'高度好评',c:'pos'},{t:'龙井虾仁',c:'pos'}],sentiment:'😊 积极',sentColor:'var(--green)'},
+    {store:'静安·宁桂杏',storeColor:'background:#ffedd5;color:#9a3412',time:'2/15 18:15',content:'桌子没擦干净就让我们坐了，餐具上还有水渍。卫生细节要注意。',tags:[{t:'卫生问题',c:'neg'}],sentiment:'😞 消极',sentColor:'var(--rose)'},
+    {store:'徐汇·野百灵',storeColor:'background:#fef3c7;color:#92400e',time:'2/15 12:50',content:'上菜顺序有点乱，凉菜和热菜混着上。其他都还好，味道是不错的。',tags:[{t:'上菜顺序',c:'neg'},{t:'口味好',c:'pos'}],sentiment:'😐 中性',sentColor:'var(--amber)'},
+    {store:'上马·宁桂杏',storeColor:'background:#ffedd5;color:#9a3412',time:'2/14 20:00',content:'情人节套餐很用心，摆盘很漂亮。就是甜品杏仁豆腐有点太甜了。',tags:[{t:'节日活动',c:'pos'},{t:'甜度偏高',c:'sug'}],sentiment:'😊 积极',sentColor:'var(--green)'}
+  ];
+  var fbEl=document.getElementById('fbList');
+  feedbacks.forEach(function(f){
+    var tagEls=f.tags.map(function(t){return el('span',{className:'fb-tag '+t.c,textContent:t.t})});
+    var sentEl=el('span',{className:'fb-sentiment',style:'color:'+f.sentColor,textContent:f.sentiment});
+    tagEls.push(sentEl);
+    var card=el('div',{className:'fb-card'},[
+      el('div',{className:'fb-top'},[
+        el('span',{className:'fb-store',style:f.storeColor,textContent:f.store}),
+        el('span',{className:'fb-time',textContent:f.time})
+      ]),
+      el('div',{className:'fb-content',textContent:f.content}),
+      el('div',{className:'fb-footer'},tagEls)
+    ]);
+    fbEl.appendChild(card);
+  });
+
+  // Sentiment Chart
+  new Chart(document.getElementById('sentimentChart'),{
+    type:'doughnut',
+    data:{
+      labels:['非常满意','满意','一般','不满意'],
+      datasets:[{data:[42,45.3,8.5,4.2],backgroundColor:['rgba(22,163,74,.75)','rgba(13,148,136,.7)','rgba(217,119,6,.65)','rgba(225,29,72,.65)'],borderColor:'#fff',borderWidth:3,hoverOffset:6}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{position:'bottom',labels:{color:'#57534e',usePointStyle:true,pointStyle:'circle',padding:12,font:{family:'Noto Sans SC',size:11}}},tooltip:{backgroundColor:'#1c1917',titleColor:'#fafaf9',bodyColor:'#a8a29e',padding:10,cornerRadius:8,bodyFont:{family:'DM Mono'},callbacks:{label:function(c){return'  '+c.label+': '+c.raw+'%'}}}}
+    }
+  });
+
+  // Store Compare
+  var stores=[
+    {name:'上马·野百灵',score:91.2,color:'#d97706'},
+    {name:'上马·宁桂杏',score:88.5,color:'#ea580c'},
+    {name:'静安·宁桂杏',score:86.8,color:'#0d9488'},
+    {name:'虹桥·野百灵',score:84.3,color:'#d97706'},
+    {name:'徐汇·野百灵',score:79.6,color:'#ef4444'}
+  ];
+  var storeEl=document.getElementById('storeCompare');
+  stores.forEach(function(s){
+    var scoreColor=s.score>=88?'var(--green)':s.score>=83?'var(--amber)':'var(--rose)';
+    var row=el('div',{className:'store-row'},[
+      el('span',{className:'store-name',textContent:s.name}),
+      el('div',{className:'store-bar-wrap'},[
+        el('div',{className:'store-bar',style:'width:'+s.score+'%;background:'+s.color})
+      ]),
+      el('span',{className:'store-score',style:'color:'+scoreColor,textContent:s.score.toFixed(1)})
+    ]);
+    storeEl.appendChild(row);
+  });
+
+  // Issue Chart
+  new Chart(document.getElementById('issueChart'),{
+    type:'bar',
+    data:{
+      labels:['上菜速度','口味不稳定','等位时间','卫生细节','服务态度','菜单丰富度','温度/环境'],
+      datasets:[{data:[38,27,22,18,12,10,8],backgroundColor:['rgba(225,29,72,.6)','rgba(225,29,72,.5)','rgba(217,119,6,.55)','rgba(217,119,6,.45)','rgba(100,116,139,.45)','rgba(100,116,139,.35)','rgba(100,116,139,.25)'],borderRadius:5,barPercentage:.65}]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#1c1917',titleColor:'#fafaf9',bodyColor:'#a8a29e',padding:10,cornerRadius:8,bodyFont:{family:'DM Mono'},callbacks:{label:function(c){return'  '+c.raw+' 次提及'}}}},
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,.04)',drawBorder:false},ticks:{color:'#a8a29e',font:{family:'DM Mono',size:11}}},
+        y:{grid:{display:false},ticks:{color:'#57534e',font:{family:'Noto Sans SC',size:11.5}}}
+      }
+    }
+  });
+
+  // Keywords Cloud
+  var keywords=[
+    {t:'口味好',s:'xl',bg:'var(--green-light)',c:'var(--green)'},{t:'上菜慢',s:'xl',bg:'var(--rose-light)',c:'var(--rose)'},
+    {t:'环境好',s:'lg',bg:'var(--teal-light)',c:'var(--teal)'},{t:'烤鸡',s:'lg',bg:'var(--amber-light)',c:'var(--amber)'},
+    {t:'服务态度',s:'lg',bg:'var(--indigo-light)',c:'var(--indigo)'},{t:'性价比',s:'md',bg:'var(--green-light)',c:'var(--green)'},
+    {t:'等位',s:'md',bg:'var(--rose-light)',c:'var(--rose)'},{t:'桂花糖藕',s:'md',bg:'var(--amber-light)',c:'var(--amber)'},
+    {t:'会再来',s:'md',bg:'var(--teal-light)',c:'var(--teal)'},{t:'偏咸',s:'sm',bg:'var(--rose-light)',c:'var(--rose)'},
+    {t:'拍照打卡',s:'sm',bg:'var(--indigo-light)',c:'var(--indigo)'},{t:'儿童餐',s:'sm',bg:'var(--amber-light)',c:'var(--amber)'},
+    {t:'龙井虾仁',s:'sm',bg:'var(--green-light)',c:'var(--green)'},{t:'卫生',s:'sm',bg:'var(--rose-light)',c:'var(--rose)'},
+    {t:'精致',s:'sm',bg:'var(--teal-light)',c:'var(--teal)'},{t:'空调冷',s:'sm',bg:'var(--slate-light)',c:'var(--slate)'},
+    {t:'套餐少',s:'sm',bg:'var(--amber-light)',c:'var(--amber)'},{t:'摆盘',s:'sm',bg:'var(--green-light)',c:'var(--green)'}
+  ];
+  var kwEl=document.getElementById('kwCloud');
+  keywords.forEach(function(k){
+    kwEl.appendChild(el('span',{className:'kw kw-'+k.s,style:'background:'+k.bg+';color:'+k.c,textContent:k.t}));
+  });
+
+  // Action Items
+  var actions=[
+    {priority:'high',title:'上马店出餐速度优化',desc:'本周上菜慢相关反馈38次，占差评首位。建议午高峰增加1名配菜人员。',owner:'厨房主管',due:'2/19'},
+    {priority:'high',title:'徐汇店口味标准化培训',desc:'酸菜鱼、红烧肉口味投诉集中，疑似调味配比偏差。需统一SOP复训。',owner:'品控经理',due:'2/20'},
+    {priority:'high',title:'静安店卫生巡检整改',desc:'餐桌清洁、餐具水渍问题2次被提及。安排专项检查并落实责任制。',owner:'店长',due:'2/18'},
+    {priority:'mid',title:'虹桥店午市套餐扩充',desc:'顾客反馈午市选择太少，缺乏儿童餐。建议增加2-3个套餐选项。',owner:'菜品研发',due:'2/24'},
+    {priority:'mid',title:'宁桂杏甜品甜度调整',desc:'杏仁豆腐甜度偏高反馈，建议减糖15%或提供低糖选项。',owner:'甜品组',due:'2/22'},
+    {priority:'low',title:'上马店空调分区温控',desc:'靠窗位置顾客反馈偏冷，建议调整空调出风方向或提供毛毯。',owner:'前厅经理',due:'2/25'}
+  ];
+  var actEl=document.getElementById('actionList');
+  actions.forEach(function(a){
+    var item=el('div',{className:'action-item'},[
+      el('div',{className:'action-priority '+a.priority}),
+      el('div',{className:'action-body'},[
+        el('div',{className:'action-title',textContent:a.title}),
+        el('div',{className:'action-desc',textContent:a.desc}),
+        el('div',{className:'action-meta'},[
+          el('span',{className:'action-owner',textContent:a.owner}),
+          el('span',{className:'action-due',textContent:'截止 '+a.due})
+        ])
+      ])
+    ]);
+    actEl.appendChild(item);
+  });
+
+  // Radar Chart
+  new Chart(document.getElementById('radarChart'),{
+    type:'radar',
+    data:{
+      labels:['口味','服务','环境','卫生','速度','性价比'],
+      datasets:[
+        {label:'野百灵',data:[9.1,8.5,8.8,8.2,7.6,8.4],borderColor:'#d97706',backgroundColor:'rgba(217,119,6,.12)',pointBackgroundColor:'#d97706',pointRadius:4,borderWidth:2},
+        {label:'宁桂杏',data:[8.7,8.8,9.0,8.0,7.8,8.1],borderColor:'#0d9488',backgroundColor:'rgba(13,148,136,.12)',pointBackgroundColor:'#0d9488',pointRadius:4,borderWidth:2}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:'#57534e',usePointStyle:true,pointStyle:'circle',padding:16,font:{family:'Noto Sans SC',size:12}}}},
+      scales:{
+        r:{min:5,max:10,ticks:{display:false,stepSize:1},grid:{color:'rgba(0,0,0,.06)'},pointLabels:{color:'#57534e',font:{family:'Noto Sans SC',size:12,weight:'500'}},angleLines:{color:'rgba(0,0,0,.06)'}}
+      }
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
