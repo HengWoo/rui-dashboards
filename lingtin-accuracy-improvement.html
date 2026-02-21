@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>灵听桌访系统 — 准确度优化方案</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0F0F0F;--card:#1A1A1A;--card2:#222;--border:#2A2A2A;--t1:#F5F5F5;--t2:#A3A3A3;--t3:#737373;--accent:#F59E0B;--red:#EF4444;--green:#22C55E;--blue:#3B82F6;--purple:#A855F7;--orange:#EA580C}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Noto Sans SC",sans-serif;line-height:1.7;padding:0 0 80px}
+.hero{padding:60px 40px 48px;max-width:900px;margin:0 auto}
+.hero .tag{display:inline-block;background:var(--accent);color:#000;font-size:11px;font-weight:700;padding:3px 10px;border-radius:4px;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
+.hero h1{font-size:32px;font-weight:700;line-height:1.3;margin-bottom:12px}
+.hero .sub{color:var(--t2);font-size:15px}
+.hero .meta{margin-top:20px;display:flex;gap:24px;color:var(--t3);font-size:13px}
+.hero .meta span{display:flex;align-items:center;gap:6px}
+.container{max-width:900px;margin:0 auto;padding:0 40px}
+h2{font-size:22px;font-weight:700;margin:48px 0 20px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+h2 .num{background:var(--accent);color:#000;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+h3{font-size:16px;font-weight:600;margin:24px 0 10px;color:var(--t1)}
+h4{font-size:14px;font-weight:600;margin:20px 0 8px;color:var(--accent)}
+p{color:var(--t2);font-size:14px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin:16px 0}
+.card.red{border-left:3px solid var(--red)}
+.card.amber{border-left:3px solid var(--accent)}
+.card.green{border-left:3px solid var(--green)}
+.card.blue{border-left:3px solid var(--blue)}
+.card.purple{border-left:3px solid var(--purple)}
+.card h4{margin-top:0}
+.pipeline{display:flex;align-items:center;gap:0;margin:20px 0;flex-wrap:wrap}
+.pipeline .step{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:12px;color:var(--t2);text-align:center;min-width:100px}
+.pipeline .step strong{display:block;color:var(--t1);font-size:13px;margin-bottom:2px}
+.pipeline .step.problem{border-color:var(--red);background:#1A1111}
+.pipeline .arrow{color:var(--t3);font-size:16px;margin:0 4px;flex-shrink:0}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+thead th{background:var(--card2);color:var(--t1);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border)}
+tbody td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--t2)}
+tbody tr:hover{background:var(--card)}
+td.good{color:var(--green);font-weight:600}
+td.bad{color:var(--red);font-weight:600}
+td.warn{color:var(--accent);font-weight:600}
+td.pick{background:#1A1A0A;color:var(--accent);font-weight:600}
+code{background:var(--card2);color:var(--accent);padding:2px 6px;border-radius:4px;font-size:12px;font-family:"SF Mono","Fira Code",monospace}
+pre{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:12px 0;font-size:12px;line-height:1.6;color:var(--t2);font-family:"SF Mono","Fira Code",monospace}
+pre .cm{color:var(--t3)}
+pre .kw{color:var(--purple)}
+pre .str{color:var(--green)}
+pre .fn{color:var(--blue)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge.p0{background:#2D1010;color:var(--red)}
+.badge.p1{background:#2D2010;color:var(--accent)}
+.badge.p2{background:#102D10;color:var(--green)}
+.priority-list{list-style:none;padding:0}
+.priority-list li{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border)}
+.priority-list li:last-child{border:none}
+.priority-list .label{flex-shrink:0;width:32px;text-align:center}
+ul{padding-left:20px;margin:8px 0}
+ul li{color:var(--t2);font-size:14px;margin:4px 0}
+.timeline{position:relative;padding-left:28px;margin:20px 0}
+.timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:var(--border)}
+.timeline .item{position:relative;margin-bottom:24px}
+.timeline .item::before{content:'';position:absolute;left:-24px;top:6px;width:12px;height:12px;border-radius:50%;border:2px solid var(--accent);background:var(--bg)}
+.timeline .item.done::before{background:var(--accent)}
+.timeline .item h4{margin-top:0;font-size:14px}
+.timeline .item p{font-size:13px;margin:4px 0 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.grid2{grid-template-columns:1fr}.pipeline{flex-direction:column;align-items:stretch}.pipeline .arrow{transform:rotate(90deg);text-align:center}.hero{padding:32px 20px 32px}.container{padding:0 20px}}
+.highlight-box{background:linear-gradient(135deg,#1A1A0A,#1A1510);border:1px solid #3D3500;border-radius:10px;padding:20px;margin:16px 0}
+.highlight-box h4{color:var(--accent);margin:0 0 8px}
+.file-ref{color:var(--t3);font-size:12px;font-style:italic}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:16px 0}
+.compare .before,.compare .after{border-radius:10px;padding:20px}
+.compare .before{background:#1A1111;border:1px solid #3D1111}
+.compare .after{background:#111A11;border:1px solid #113D11}
+.compare h4{margin:0 0 10px}
+.compare .before h4{color:var(--red)}
+.compare .after h4{color:var(--green)}
+.compare pre{border:none;background:rgba(0,0,0,.3);font-size:11px;margin:8px 0 0}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="tag">Technical Spec</div>
+  <h1>灵听桌访系统 — 准确度优化方案</h1>
+  <p class="sub">全链路分析：从音频采集到 AI 结构化输出，逐层定位问题并给出实施方案</p>
+  <div class="meta">
+    <span>2026-02-19</span>
+    <span>有点东西餐饮集团</span>
+    <span>灵听 Lingtin v3.9+</span>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ======================== SECTION 1 ======================== -->
+<h2><span class="num">1</span>当前架构与数据流</h2>
+
+<div class="pipeline">
+  <div class="step"><strong>前端录音</strong>.webm 48kbps</div>
+  <div class="arrow">→</div>
+  <div class="step"><strong>上传</strong>Supabase Storage</div>
+  <div class="arrow">→</div>
+  <div class="step"><strong>FFmpeg</strong>转 PCM 16kHz</div>
+  <div class="arrow">→</div>
+  <div class="step problem"><strong>讯飞 STT</strong>方言大模型 slm</div>
+  <div class="arrow">→</div>
+  <div class="step problem"><strong>无清洗</strong>直接传递</div>
+  <div class="arrow">→</div>
+  <div class="step"><strong>Gemini Flash</strong>结构化分析</div>
+  <div class="arrow">→</div>
+  <div class="step"><strong>写入 DB</strong>Supabase</div>
+</div>
+
+<p>红色标记为当前主要瓶颈环节。以下逐一分析每个环节的问题。</p>
+
+<!-- ======================== SECTION 2 ======================== -->
+<h2><span class="num">2</span>问题总结</h2>
+
+<div class="card red">
+  <h4><span class="badge p0">P0 严重</span> 无说话人分离 — 店长/顾客角色混淆</h4>
+  <p>当前 STT 输出是单一文本流，不区分谁在说话。Gemini 只能靠语义猜测哪些是店长问的、哪些是顾客答的，导致 <code>managerQuestions</code> 和 <code>customerAnswers</code> 频繁错误，进而影响情绪评分和问题归类。</p>
+  <p class="file-ref">文件: xunfei-stt.service.ts — 未启用 speaker_diarization 参数</p>
+</div>
+
+<div class="card red">
+  <h4><span class="badge p0">P0 严重</span> Transcript 无预处理，噪声直传 AI</h4>
+  <p>STT 返回的原始文本直接传给 Gemini，没有任何清洗。餐厅环境噪音导致的误识别（重复语气词、乱码片段）全部混入分析，拉低输出质量。</p>
+  <p>同时讯飞返回的 <code>wp</code>（词置信度）字段被完全丢弃，低置信度的错误识别无法过滤。</p>
+  <p class="file-ref">文件: ai-processing.service.ts — rawTranscript 直接赋给 correctedTranscript</p>
+</div>
+
+<div class="card amber">
+  <h4><span class="badge p1">P1 重要</span> Prompt 设计缺陷 — feedbacks 硬限 5 条</h4>
+  <p>当前 Gemini prompt 限制最多提取 5 条 feedback。桌访录音中可能涉及多道菜、多个维度的反馈，超出 5 条的负面反馈会被截断丢失。</p>
+</div>
+
+<div class="card amber">
+  <h4><span class="badge p1">P1 重要</span> 情绪评分单维度 — 无法表达复杂感受</h4>
+  <p>单一 <code>sentimentScore</code> (0~1) 无法区分「菜品好但服务差」的情况。一个综合分反而掩盖了具体问题。</p>
+</div>
+
+<div class="card amber">
+  <h4><span class="badge p1">P1 重要</span> 录音码率偏低 — 嘈杂环境丢细节</h4>
+  <p>前端录音 <code>audioBitsPerSecond: 48000</code>，在餐厅嘈杂环境下，48kbps opus 编码在低频语音区可能丢失关键细节，影响 STT 识别率。</p>
+  <p class="file-ref">文件: useAudioRecorder.ts — recorderOptions</p>
+</div>
+
+<div class="card green">
+  <h4><span class="badge p2">P2 优化</span> dishMentions 表未填充</h4>
+  <p>数据库中 <code>lingtin_dish_mentions</code> 表的 schema 和写入方法都已实现，但 <code>processWithGemini</code> 之后从未调用写入。菜品级别统计完全依赖 AI 聊天时临时推算，无法做精确聚合。</p>
+  <p class="file-ref">文件: supabase.service.ts — insertDishMentions 方法已存在但未被调用</p>
+</div>
+
+<div class="card green">
+  <h4><span class="badge p2">P2 优化</span> 无分析置信度输出</h4>
+  <p>当前输出不包含置信度，无法区分「明确差评」和「模糊中评」。对于转录质量差的录音，分析结果可能完全不可靠但系统无法标记。</p>
+</div>
+
+<!-- ======================== SECTION 3 ======================== -->
+<h2><span class="num">3</span>优化方案</h2>
+
+<h3>3.1 STT 模型替换</h3>
+<p>核心需求：<strong>说话人分离 + 方言识别 + 噪声环境适应</strong>。门店在四川（江油、上马），顾客普遍带方言。</p>
+
+<table>
+  <thead>
+    <tr><th>模型</th><th>说话人分离</th><th>中文/方言</th><th>噪声表现</th><th>成本</th><th>接入方式</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>讯飞方言大模型 <span style="color:var(--t3)">(当前)</span></td><td class="bad">不支持</td><td class="good">202种方言</td><td>一般</td><td>~¥0.03/次</td><td>WebSocket</td></tr>
+    <tr style="background:var(--card)"><td class="pick">阿里 Paraformer-v2</td><td class="good">内置支持</td><td class="good">方言强</td><td class="good">强</td><td class="good">¥0.008/15s</td><td>REST API</td></tr>
+    <tr><td>Google Chirp 2</td><td class="good">内置支持</td><td class="warn">无方言</td><td class="good">强</td><td>$0.016/min</td><td>REST API</td></tr>
+    <tr><td>Azure Speech</td><td class="good">内置支持</td><td class="warn">部分方言</td><td class="good">强</td><td>$0.016/min</td><td>REST API</td></tr>
+    <tr><td>Deepgram Nova-3</td><td class="good">内置支持</td><td class="warn">方言弱</td><td class="good">很强</td><td class="good">$0.0043/min</td><td>REST API</td></tr>
+  </tbody>
+</table>
+
+<div class="highlight-box">
+  <h4>推荐：阿里 Paraformer-v2（通义听悟）</h4>
+  <ul>
+    <li>方言识别能力与讯飞持平，<strong>且内置说话人分离</strong></li>
+    <li>REST API 接入比讯飞 WebSocket 更简单，代码改动更少</li>
+    <li>支持长音频、标点、语气词过滤、ITN（数字规整）</li>
+    <li>成本更低（¥0.008/15s vs 讯飞 ¥0.03/次）</li>
+  </ul>
+  <p style="margin-top:12px;color:var(--t3);font-size:12px">备选：如果后续统一微软技术栈，可选 Azure Speech（方言覆盖略窄但 diarization 成熟）</p>
+</div>
+
+<h3>3.2 LLM 分析模型替换</h3>
+<p>当前 Gemini 2.0 Flash 对中文语义理解和结构化提取有改进空间。</p>
+
+<table>
+  <thead>
+    <tr><th>模型</th><th>中文理解</th><th>结构化输出</th><th>速度</th><th>成本/次</th><th>适用</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Gemini 2.0 Flash <span style="color:var(--t3)">(当前)</span></td><td>良</td><td>良</td><td class="good">快</td><td class="good">~¥0.005</td><td>-</td></tr>
+    <tr style="background:var(--card)"><td class="pick">Gemini 2.5 Flash</td><td class="good">优</td><td class="good">优</td><td class="good">快</td><td class="good">~¥0.008</td><td>日常桌访</td></tr>
+    <tr><td>DeepSeek-V3</td><td class="good">极强</td><td>强</td><td class="good">快</td><td class="good">~¥0.004</td><td>日常桌访</td></tr>
+    <tr style="background:var(--card)"><td class="pick">Qwen-Max</td><td class="good">极强</td><td class="good">强</td><td>中</td><td>~¥0.02</td><td>差评二审</td></tr>
+    <tr><td>Claude Sonnet 4</td><td class="good">优</td><td class="good">极强</td><td>中</td><td>~¥0.03</td><td>差评二审</td></tr>
+  </tbody>
+</table>
+
+<div class="highlight-box">
+  <h4>推荐：分层策略</h4>
+  <ul>
+    <li><strong>日常桌访</strong>（sentiment ≥ 0.4）→ <strong>Gemini 2.5 Flash</strong>：快且便宜，比 2.0 Flash 中文理解显著提升</li>
+    <li><strong>差评录音</strong>（sentiment < 0.4）→ <strong>Qwen-Max</strong>：中文语义理解最强，差评仅占 ~2%，成本几乎不增加</li>
+  </ul>
+</div>
+
+<h3>3.3 Transcript 清洗层（新增）</h3>
+<p>在 STT 输出和 LLM 分析之间插入一个清洗步骤：</p>
+
+<div class="compare">
+  <div class="before">
+    <h4>当前：无清洗</h4>
+<pre>
+rawTranscript → Gemini
+<span class="cm">// "方言大模型结果直接作为最终文本"</span>
+</pre>
+  </div>
+  <div class="after">
+    <h4>优化后：加入清洗</h4>
+<pre>
+rawTranscript
+  → 去除连续重复片段
+  → 过滤低置信度词 (wp)
+  → 去多余语气词
+  → 合并碎片句
+  → cleanTranscript → Gemini
+</pre>
+  </div>
+</div>
+
+<h3>3.4 Prompt 优化</h3>
+
+<div class="compare">
+  <div class="before">
+    <h4>当前 Prompt 输出结构</h4>
+<pre>
+{
+  "<span class="str">aiSummary</span>": "20字以内摘要",
+  "<span class="str">sentimentScore</span>": 0.5,
+  "<span class="str">feedbacks</span>": [<span class="cm">最多5条</span>],
+  "<span class="str">managerQuestions</span>": [...],
+  "<span class="str">customerAnswers</span>": [...]
+}
+</pre>
+  </div>
+  <div class="after">
+    <h4>优化后输出结构</h4>
+<pre>
+{
+  "<span class="str">aiSummary</span>": "20字以内摘要",
+  "<span class="str">sentimentScore</span>": 0.5,
+  "<span class="str">dimensions</span>": {
+    "<span class="str">taste</span>": 0.7,
+    "<span class="str">service</span>": 0.6,
+    "<span class="str">speed</span>": 0.3
+  },
+  "<span class="str">confidence</span>": 0.85,
+  "<span class="str">feedbacks</span>": [<span class="cm">最多10条</span>],
+  "<span class="str">dishMentions</span>": [
+    {"<span class="str">dish</span>":"酸汤鱼","<span class="str">sentiment</span>":"negative"}
+  ],
+  "<span class="str">managerQuestions</span>": [...],
+  "<span class="str">customerAnswers</span>": [...]
+}
+</pre>
+  </div>
+</div>
+
+<p>关键变化：</p>
+<ul>
+  <li><strong>feedbacks 上限 5→10</strong>：避免截断重要反馈</li>
+  <li><strong>新增 dimensions</strong>：多维度评分（口味/服务/速度），替代单一分数</li>
+  <li><strong>新增 confidence</strong>：标记分析可信度，低置信度结果可人工复核</li>
+  <li><strong>新增 dishMentions</strong>：直接提取菜品，写入 <code>lingtin_dish_mentions</code> 表</li>
+  <li><strong>说话人标记适配</strong>：当 STT 提供 speaker tag 后，prompt 需明确引导按标记区分角色</li>
+</ul>
+
+<h3>3.5 录音质量提升</h3>
+
+<div class="card">
+  <p>前端改动极小，一行配置：</p>
+<pre>
+<span class="cm">// useAudioRecorder.ts</span>
+<span class="kw">const</span> recorderOptions = {
+  audioBitsPerSecond: <span class="str">96000</span>,  <span class="cm">// 48000 → 96000</span>
+};
+
+<span class="cm">// getUserMedia constraints</span>
+audio: {
+  echoCancellation: <span class="kw">true</span>,
+  noiseSuppression: <span class="kw">true</span>,
+  autoGainControl: <span class="kw">true</span>,    <span class="cm">// 新增：稳定音量</span>
+  sampleRate: <span class="str">44100</span>,
+}
+</pre>
+</div>
+
+<!-- ======================== SECTION 4 ======================== -->
+<h2><span class="num">4</span>优化后架构</h2>
+
+<div class="pipeline">
+  <div class="step" style="border-color:var(--green)"><strong>前端录音</strong>.webm 96kbps + AGC</div>
+  <div class="arrow">→</div>
+  <div class="step"><strong>上传</strong>Supabase Storage</div>
+  <div class="arrow">→</div>
+  <div class="step" style="border-color:var(--green)"><strong>阿里 Paraformer</strong>STT + 说话人分离</div>
+  <div class="arrow">→</div>
+  <div class="step" style="border-color:var(--green)"><strong>文本清洗</strong>去噪/去重/过滤</div>
+  <div class="arrow">→</div>
+  <div class="step" style="border-color:var(--green)"><strong>Gemini 2.5 Flash<br>/ Qwen-Max</strong>分层分析</div>
+  <div class="arrow">→</div>
+  <div class="step"><strong>写入 DB</strong>+ dishMentions</div>
+</div>
+
+<p>绿色标记为本次优化涉及的环节。</p>
+
+<!-- ======================== SECTION 5 ======================== -->
+<h2><span class="num">5</span>实施计划</h2>
+
+<div class="timeline">
+  <div class="item">
+    <h4>Phase 1 — 快速见效（1-2天）</h4>
+    <p><span class="badge p0">P0</span> Transcript 清洗层 + <code>wp</code> 置信度过滤</p>
+    <p><span class="badge p1">P1</span> 录音码率 48→96kbps，启用 AGC</p>
+    <p><span class="badge p1">P1</span> feedbacks 上限 5→10，新增 dimensions 多维评分</p>
+    <p style="color:var(--t3);font-size:12px;margin-top:6px">涉及文件: ai-processing.service.ts, useAudioRecorder.ts</p>
+    <p style="color:var(--t3);font-size:12px">改动量: ~100行代码，不影响现有数据结构</p>
+  </div>
+  <div class="item">
+    <h4>Phase 2 — 核心升级（3-5天）</h4>
+    <p><span class="badge p0">P0</span> STT 替换：讯飞 → 阿里 Paraformer-v2（含说话人分离）</p>
+    <p><span class="badge p0">P0</span> Prompt 适配说话人标记，明确角色区分规则</p>
+    <p><span class="badge p1">P1</span> LLM 升级：Gemini 2.0 Flash → 2.5 Flash（OpenRouter 换 model 字符串）</p>
+    <p style="color:var(--t3);font-size:12px;margin-top:6px">涉及文件: 新建 alibaba-stt.service.ts，替换 xunfei-stt.service.ts 调用</p>
+    <p style="color:var(--t3);font-size:12px">改动量: 新增 1 个 service 文件，修改 2-3 个调用点</p>
+  </div>
+  <div class="item">
+    <h4>Phase 3 — 精细化（2-3天）</h4>
+    <p><span class="badge p1">P1</span> 差评二审机制：sentiment < 0.4 时自动调用 Qwen-Max 复核</p>
+    <p><span class="badge p2">P2</span> dishMentions 表填充，实现菜品级别聚合统计</p>
+    <p><span class="badge p2">P2</span> 新增 confidence 字段，低置信度结果标记人工复核</p>
+    <p style="color:var(--t3);font-size:12px;margin-top:6px">涉及文件: ai-processing.service.ts, supabase.service.ts</p>
+    <p style="color:var(--t3);font-size:12px">可能需要 DB migration: dimensions JSONB 字段, confidence float 字段</p>
+  </div>
+</div>
+
+<!-- ======================== SECTION 6 ======================== -->
+<h2><span class="num">6</span>预期效果</h2>
+
+<div class="grid2">
+  <div class="card">
+    <h4 style="color:var(--red)">优化前</h4>
+    <ul>
+      <li>店长/顾客角色经常混淆</li>
+      <li>噪声误识别污染分析结果</li>
+      <li>负面反馈可能被截断（5条上限）</li>
+      <li>单一情绪分无法表达复杂感受</li>
+      <li>无法判断分析结果是否可靠</li>
+      <li>菜品统计靠 AI 临时推算</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--green)">优化后</h4>
+    <ul>
+      <li>说话人标记，角色区分准确</li>
+      <li>文本清洗过滤噪声干扰</li>
+      <li>最多 10 条 feedback 覆盖全面</li>
+      <li>口味/服务/速度多维度评分</li>
+      <li>confidence 标记可疑结果</li>
+      <li>菜品级别精确聚合（dish_mentions 表）</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card blue" style="margin-top:24px">
+  <h4 style="color:var(--blue)">成本影响</h4>
+  <p>以 2/19 数据为参考（317 条桌访/天）：</p>
+  <table>
+    <thead><tr><th>项目</th><th>当前成本/天</th><th>优化后成本/天</th><th>变化</th></tr></thead>
+    <tbody>
+      <tr><td>STT</td><td>~¥9.5（讯飞）</td><td>~¥5.1（阿里）</td><td class="good">-46%</td></tr>
+      <tr><td>LLM（日常）</td><td>~¥1.6（Flash 2.0）</td><td>~¥2.5（Flash 2.5）</td><td class="warn">+56%</td></tr>
+      <tr><td>LLM（差评二审）</td><td>-</td><td>~¥0.14（7条×Qwen）</td><td class="warn">新增</td></tr>
+      <tr><td><strong>合计</strong></td><td><strong>~¥11.1</strong></td><td><strong>~¥7.7</strong></td><td class="good"><strong>-30%</strong></td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:8px">STT 成本大幅降低 + LLM 小幅上升 = <strong>总成本下降约 30%，质量显著提升</strong></p>
+</div>
+
+<!-- ======================== SECTION 7 ======================== -->
+<h2><span class="num">7</span>涉及文件清单</h2>
+
+<table>
+  <thead><tr><th>文件</th><th>改动类型</th><th>Phase</th></tr></thead>
+  <tbody>
+    <tr><td><code>useAudioRecorder.ts</code></td><td>修改录音参数（码率 + AGC）</td><td>Phase 1</td></tr>
+    <tr><td><code>ai-processing.service.ts</code></td><td>新增清洗层 + prompt 重构 + 分层调用</td><td>Phase 1-3</td></tr>
+    <tr><td><code>xunfei-stt.service.ts</code></td><td>保留但标记废弃（fallback）</td><td>Phase 2</td></tr>
+    <tr><td><code>alibaba-stt.service.ts</code></td><td>新建：阿里 Paraformer 接入</td><td>Phase 2</td></tr>
+    <tr><td><code>supabase.service.ts</code></td><td>启用 insertDishMentions 调用</td><td>Phase 3</td></tr>
+    <tr><td><code>database.ts</code></td><td>补充 dimensions / confidence 类型</td><td>Phase 3</td></tr>
+    <tr><td>Supabase Migration</td><td>新增字段: dimensions, confidence</td><td>Phase 3</td></tr>
+  </tbody>
+</table>
+
+</div>
+</body>
+</html>
