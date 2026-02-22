@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>灵听桌访系统 — 准确度优化方案</title>
+<title>灵听桌访系统 — 准确度优化方案 v2</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0F0F0F;--card:#1A1A1A;--card2:#222;--border:#2A2A2A;--t1:#F5F5F5;--t2:#A3A3A3;--t3:#737373;--accent:#F59E0B;--red:#EF4444;--green:#22C55E;--blue:#3B82F6;--purple:#A855F7;--orange:#EA580C}
@@ -12,7 +12,7 @@ body{background:var(--bg);color:var(--t1);font-family:-apple-system,BlinkMacSyst
 .hero .tag{display:inline-block;background:var(--accent);color:#000;font-size:11px;font-weight:700;padding:3px 10px;border-radius:4px;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
 .hero h1{font-size:32px;font-weight:700;line-height:1.3;margin-bottom:12px}
 .hero .sub{color:var(--t2);font-size:15px}
-.hero .meta{margin-top:20px;display:flex;gap:24px;color:var(--t3);font-size:13px}
+.hero .meta{margin-top:20px;display:flex;gap:24px;color:var(--t3);font-size:13px;flex-wrap:wrap}
 .hero .meta span{display:flex;align-items:center;gap:6px}
 .container{max-width:900px;margin:0 auto;padding:0 40px}
 h2{font-size:22px;font-weight:700;margin:48px 0 20px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
@@ -40,6 +40,7 @@ td.good{color:var(--green);font-weight:600}
 td.bad{color:var(--red);font-weight:600}
 td.warn{color:var(--accent);font-weight:600}
 td.pick{background:#1A1A0A;color:var(--accent);font-weight:600}
+td.new{color:var(--blue);font-weight:600;font-size:11px}
 code{background:var(--card2);color:var(--accent);padding:2px 6px;border-radius:4px;font-size:12px;font-family:"SF Mono","Fira Code",monospace}
 pre{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:12px 0;font-size:12px;line-height:1.6;color:var(--t2);font-family:"SF Mono","Fira Code",monospace}
 pre .cm{color:var(--t3)}
@@ -50,10 +51,7 @@ pre .fn{color:var(--blue)}
 .badge.p0{background:#2D1010;color:var(--red)}
 .badge.p1{background:#2D2010;color:var(--accent)}
 .badge.p2{background:#102D10;color:var(--green)}
-.priority-list{list-style:none;padding:0}
-.priority-list li{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border)}
-.priority-list li:last-child{border:none}
-.priority-list .label{flex-shrink:0;width:32px;text-align:center}
+.badge.updated{background:#10102D;color:var(--blue)}
 ul{padding-left:20px;margin:8px 0}
 ul li{color:var(--t2);font-size:14px;margin:4px 0}
 .timeline{position:relative;padding-left:28px;margin:20px 0}
@@ -76,15 +74,21 @@ ul li{color:var(--t2);font-size:14px;margin:4px 0}
 .compare .before h4{color:var(--red)}
 .compare .after h4{color:var(--green)}
 .compare pre{border:none;background:rgba(0,0,0,.3);font-size:11px;margin:8px 0 0}
+.export-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:12px 40px;display:flex;justify-content:center;gap:12px;z-index:100}
+.export-bar button{background:var(--accent);color:#000;border:none;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.export-bar button:hover{opacity:.85}
+.export-bar button.secondary{background:var(--card2);color:var(--t2);border:1px solid var(--border)}
+.export-bar button.secondary:hover{color:var(--t1)}
+.update-tag{display:inline-block;background:#10102D;color:var(--blue);font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;margin-left:6px;vertical-align:middle}
 </style>
 </head>
 <body>
 <div class="hero">
-  <div class="tag">Technical Spec</div>
+  <div class="tag">Technical Spec v2</div>
   <h1>灵听桌访系统 — 准确度优化方案</h1>
   <p class="sub">全链路分析：从音频采集到 AI 结构化输出，逐层定位问题并给出实施方案</p>
   <div class="meta">
-    <span>2026-02-19</span>
+    <span>初版 2026-02-19 · 更新 2026-02-22</span>
     <span>有点东西餐饮集团</span>
     <span>灵听 Lingtin v3.9+</span>
   </div>
@@ -97,17 +101,17 @@ ul li{color:var(--t2);font-size:14px;margin:4px 0}
 
 <div class="pipeline">
   <div class="step"><strong>前端录音</strong>.webm 48kbps</div>
-  <div class="arrow">→</div>
+  <div class="arrow">&rarr;</div>
   <div class="step"><strong>上传</strong>Supabase Storage</div>
-  <div class="arrow">→</div>
+  <div class="arrow">&rarr;</div>
   <div class="step"><strong>FFmpeg</strong>转 PCM 16kHz</div>
-  <div class="arrow">→</div>
+  <div class="arrow">&rarr;</div>
   <div class="step problem"><strong>讯飞 STT</strong>方言大模型 slm</div>
-  <div class="arrow">→</div>
+  <div class="arrow">&rarr;</div>
   <div class="step problem"><strong>无清洗</strong>直接传递</div>
-  <div class="arrow">→</div>
+  <div class="arrow">&rarr;</div>
   <div class="step"><strong>Gemini Flash</strong>结构化分析</div>
-  <div class="arrow">→</div>
+  <div class="arrow">&rarr;</div>
   <div class="step"><strong>写入 DB</strong>Supabase</div>
 </div>
 
@@ -159,7 +163,7 @@ ul li{color:var(--t2);font-size:14px;margin:4px 0}
 <!-- ======================== SECTION 3 ======================== -->
 <h2><span class="num">3</span>优化方案</h2>
 
-<h3>3.1 STT 模型替换</h3>
+<h3>3.1 STT 模型替换 <span class="update-tag">2026-02 更新</span></h3>
 <p>核心需求：<strong>说话人分离 + 方言识别 + 噪声环境适应</strong>。门店在四川（江油、上马），顾客普遍带方言。</p>
 
 <table>
@@ -167,47 +171,57 @@ ul li{color:var(--t2);font-size:14px;margin:4px 0}
     <tr><th>模型</th><th>说话人分离</th><th>中文/方言</th><th>噪声表现</th><th>成本</th><th>接入方式</th></tr>
   </thead>
   <tbody>
-    <tr><td>讯飞方言大模型 <span style="color:var(--t3)">(当前)</span></td><td class="bad">不支持</td><td class="good">202种方言</td><td>一般</td><td>~¥0.03/次</td><td>WebSocket</td></tr>
-    <tr style="background:var(--card)"><td class="pick">阿里 Paraformer-v2</td><td class="good">内置支持</td><td class="good">方言强</td><td class="good">强</td><td class="good">¥0.008/15s</td><td>REST API</td></tr>
-    <tr><td>Google Chirp 2</td><td class="good">内置支持</td><td class="warn">无方言</td><td class="good">强</td><td>$0.016/min</td><td>REST API</td></tr>
-    <tr><td>Azure Speech</td><td class="good">内置支持</td><td class="warn">部分方言</td><td class="good">强</td><td>$0.016/min</td><td>REST API</td></tr>
-    <tr><td>Deepgram Nova-3</td><td class="good">内置支持</td><td class="warn">方言弱</td><td class="good">很强</td><td class="good">$0.0043/min</td><td>REST API</td></tr>
+    <tr><td>讯飞方言大模型 <span style="color:var(--t3)">(当前)</span></td><td class="bad">不支持</td><td class="good">202种方言</td><td>一般</td><td>~&yen;0.03/次</td><td>WebSocket</td></tr>
+    <tr style="background:var(--card)"><td class="pick">阿里 Paraformer-v2</td><td class="good">内置支持</td><td class="good">方言强</td><td class="good">强</td><td class="good">&yen;0.008/15s</td><td>REST API</td></tr>
+    <tr><td>阿里 SenseVoice <span class="update-tag">新增</span></td><td class="warn">需外挂</td><td class="good">50+语言</td><td class="good">强</td><td class="good">开源免费</td><td>自部署/API</td></tr>
+    <tr><td>OpenAI GPT-4o Transcribe <span class="update-tag">新增</span></td><td class="good">内置支持</td><td class="good">中文极强</td><td class="good">很强</td><td class="good">$0.006/min</td><td>REST API</td></tr>
+    <tr><td>OpenAI GPT-4o-mini Transcribe <span class="update-tag">新增</span></td><td class="warn">不支持</td><td class="good">中文极强</td><td class="good">很强</td><td class="good">$0.003/min</td><td>REST API</td></tr>
+    <tr><td>Google Chirp 3 <span class="update-tag">原 Chirp 2</span></td><td class="good">内置支持</td><td class="good">85+语言</td><td class="good">内置降噪</td><td>$0.016/min</td><td>REST API</td></tr>
+    <tr><td>Azure Speech 快速转写 <span class="update-tag">价格更新</span></td><td class="good">批量免费</td><td class="warn">zh-CN/zh-HK</td><td class="good">强</td><td class="good">$0.006/min</td><td>REST API</td></tr>
+    <tr><td>Deepgram Nova-3 <span class="update-tag">价格更新</span></td><td class="good">内置支持</td><td class="warn">方言弱</td><td class="good">很强</td><td class="good">$0.0065/min</td><td>REST API</td></tr>
   </tbody>
 </table>
 
 <div class="highlight-box">
-  <h4>推荐：阿里 Paraformer-v2（通义听悟）</h4>
+  <h4>推荐：阿里 Paraformer-v2（通义听悟）— 仍为首选</h4>
   <ul>
     <li>方言识别能力与讯飞持平，<strong>且内置说话人分离</strong></li>
     <li>REST API 接入比讯飞 WebSocket 更简单，代码改动更少</li>
     <li>支持长音频、标点、语气词过滤、ITN（数字规整）</li>
-    <li>成本更低（¥0.008/15s vs 讯飞 ¥0.03/次）</li>
+    <li>成本更低（&yen;0.008/15s vs 讯飞 &yen;0.03/次）</li>
+    <li><strong>与 Qwen3-TTS 同生态</strong>，统一阿里云账号和计费</li>
   </ul>
-  <p style="margin-top:12px;color:var(--t3);font-size:12px">备选：如果后续统一微软技术栈，可选 Azure Speech（方言覆盖略窄但 diarization 成熟）</p>
+  <p style="margin-top:12px;color:var(--t3);font-size:12px">备选 A：OpenAI GPT-4o Transcribe-Diarize — 中文普通话识别极强，幻觉率比 Whisper 降低 90%，但文件限 25MB 且无方言支持</p>
+  <p style="color:var(--t3);font-size:12px">备选 B：Google Chirp 3（原 Chirp 2 已升级）— 新增说话人分离 + 内置降噪器 + 自动语言检测，85+ 语言</p>
+  <p style="color:var(--t3);font-size:12px">备选 C：Azure Speech 快速转写 — 批量模式 $0.006/min 且说话人分离免费，适合微软技术栈</p>
 </div>
 
-<h3>3.2 LLM 分析模型替换</h3>
-<p>当前 Gemini 2.0 Flash 对中文语义理解和结构化提取有改进空间。</p>
+<h3>3.2 LLM 分析模型替换 <span class="update-tag">2026-02 更新</span></h3>
+<p>当前 Gemini 2.0 Flash 对中文语义理解和结构化提取有改进空间。以下为截至 2026 年 2 月最新模型对比。</p>
 
 <table>
   <thead>
-    <tr><th>模型</th><th>中文理解</th><th>结构化输出</th><th>速度</th><th>成本/次</th><th>适用</th></tr>
+    <tr><th>模型</th><th>中文理解</th><th>结构化输出</th><th>速度</th><th>成本/1M tokens</th><th>适用</th></tr>
   </thead>
   <tbody>
-    <tr><td>Gemini 2.0 Flash <span style="color:var(--t3)">(当前)</span></td><td>良</td><td>良</td><td class="good">快</td><td class="good">~¥0.005</td><td>-</td></tr>
-    <tr style="background:var(--card)"><td class="pick">Gemini 2.5 Flash</td><td class="good">优</td><td class="good">优</td><td class="good">快</td><td class="good">~¥0.008</td><td>日常桌访</td></tr>
-    <tr><td>DeepSeek-V3</td><td class="good">极强</td><td>强</td><td class="good">快</td><td class="good">~¥0.004</td><td>日常桌访</td></tr>
-    <tr style="background:var(--card)"><td class="pick">Qwen-Max</td><td class="good">极强</td><td class="good">强</td><td>中</td><td>~¥0.02</td><td>差评二审</td></tr>
-    <tr><td>Claude Sonnet 4</td><td class="good">优</td><td class="good">极强</td><td>中</td><td>~¥0.03</td><td>差评二审</td></tr>
+    <tr><td>Gemini 2.0 Flash <span style="color:var(--t3)">(当前)</span></td><td>良</td><td>良</td><td class="good">快</td><td class="good">已停用</td><td>-</td></tr>
+    <tr style="background:var(--card)"><td class="pick">Gemini 2.5 Flash</td><td class="good">优</td><td class="good">优</td><td class="good">251 tok/s</td><td class="good">$0.30 / $2.50</td><td>日常桌访</td></tr>
+    <tr><td>Gemini 2.5 Flash-Lite <span class="update-tag">新增</span></td><td>良</td><td>良</td><td class="good">极快</td><td class="good">$0.10 / $0.40</td><td>超低成本</td></tr>
+    <tr><td>DeepSeek-V3.2 <span class="update-tag">原 V3</span></td><td class="good">极强</td><td>强</td><td class="good">快</td><td class="good">极低</td><td>日常桌访</td></tr>
+    <tr style="background:var(--card)"><td class="pick">Qwen3-Max <span class="update-tag">原 Qwen-Max</span></td><td class="good">极强</td><td class="good">极强</td><td>中</td><td>$1.20 / $6.00</td><td>差评二审</td></tr>
+    <tr><td>Qwen3-Max Thinking <span class="update-tag">新增</span></td><td class="good">极强</td><td class="good">极强</td><td class="warn">慢</td><td>$1.20 / $6.00</td><td>复杂争议</td></tr>
+    <tr><td>Claude Sonnet 4.6 <span class="update-tag">原 Sonnet 4</span></td><td class="good">优</td><td class="good">极强</td><td>中</td><td>$3.00 / $15.00</td><td>差评二审</td></tr>
   </tbody>
 </table>
 
 <div class="highlight-box">
-  <h4>推荐：分层策略</h4>
+  <h4>推荐：分层策略（更新版）</h4>
   <ul>
-    <li><strong>日常桌访</strong>（sentiment ≥ 0.4）→ <strong>Gemini 2.5 Flash</strong>：快且便宜，比 2.0 Flash 中文理解显著提升</li>
-    <li><strong>差评录音</strong>（sentiment < 0.4）→ <strong>Qwen-Max</strong>：中文语义理解最强，差评仅占 ~2%，成本几乎不增加</li>
+    <li><strong>日常桌访</strong>（sentiment &ge; 0.4）&rarr; <strong>Gemini 2.5 Flash</strong>：251 tok/s，思维模式可调节，比 2.0 Flash 中文理解显著提升</li>
+    <li><strong>差评录音</strong>（sentiment &lt; 0.4）&rarr; <strong>Qwen3-Max</strong>：中文语义理解最强，支持思维模式深度分析，差评仅占 ~2%</li>
+    <li><strong>超低成本场景</strong> &rarr; <strong>Gemini 2.5 Flash-Lite</strong>：$0.10/$0.40 per 1M tokens，比 Flash 便宜 92%，适合对质量要求不高的批量处理</li>
   </ul>
+  <p style="margin-top:12px;color:var(--t3);font-size:12px">注意：DeepSeek V4（1万亿参数）预计 2026 年 2 月中下旬发布，可能重新定义性价比。建议关注。</p>
 </div>
 
 <h3>3.3 Transcript 清洗层（新增）</h3>
@@ -217,7 +231,7 @@ ul li{color:var(--t2);font-size:14px;margin:4px 0}
   <div class="before">
     <h4>当前：无清洗</h4>
 <pre>
-rawTranscript → Gemini
+rawTranscript &rarr; Gemini
 <span class="cm">// "方言大模型结果直接作为最终文本"</span>
 </pre>
   </div>
@@ -225,11 +239,11 @@ rawTranscript → Gemini
     <h4>优化后：加入清洗</h4>
 <pre>
 rawTranscript
-  → 去除连续重复片段
-  → 过滤低置信度词 (wp)
-  → 去多余语气词
-  → 合并碎片句
-  → cleanTranscript → Gemini
+  &rarr; 去除连续重复片段
+  &rarr; 过滤低置信度词 (wp)
+  &rarr; 去多余语气词
+  &rarr; 合并碎片句
+  &rarr; cleanTranscript &rarr; Gemini
 </pre>
   </div>
 </div>
@@ -274,7 +288,7 @@ rawTranscript
 
 <p>关键变化：</p>
 <ul>
-  <li><strong>feedbacks 上限 5→10</strong>：避免截断重要反馈</li>
+  <li><strong>feedbacks 上限 5&rarr;10</strong>：避免截断重要反馈</li>
   <li><strong>新增 dimensions</strong>：多维度评分（口味/服务/速度），替代单一分数</li>
   <li><strong>新增 confidence</strong>：标记分析可信度，低置信度结果可人工复核</li>
   <li><strong>新增 dishMentions</strong>：直接提取菜品，写入 <code>lingtin_dish_mentions</code> 表</li>
@@ -288,7 +302,7 @@ rawTranscript
 <pre>
 <span class="cm">// useAudioRecorder.ts</span>
 <span class="kw">const</span> recorderOptions = {
-  audioBitsPerSecond: <span class="str">96000</span>,  <span class="cm">// 48000 → 96000</span>
+  audioBitsPerSecond: <span class="str">96000</span>,  <span class="cm">// 48000 &rarr; 96000</span>
 };
 
 <span class="cm">// getUserMedia constraints</span>
@@ -301,24 +315,58 @@ audio: {
 </pre>
 </div>
 
+<h3>3.6 TTS 语音合成（新增模块）<span class="update-tag">2026-02 新增</span></h3>
+<p>桌访系统可扩展 TTS 能力：为管理层<strong>生成语音版日报摘要</strong>、<strong>差评语音提醒</strong>、或在应用端为不同语言的员工提供语音播报。以下为截至 2026 年 2 月最新方案。</p>
+
+<table>
+  <thead>
+    <tr><th>模型</th><th>中文质量</th><th>语音克隆</th><th>流式输出</th><th>成本</th><th>特色</th></tr>
+  </thead>
+  <tbody>
+    <tr style="background:var(--card)"><td class="pick">Qwen3-TTS-Instruct-Flash</td><td class="good">SOTA</td><td class="good">支持</td><td class="good">12Hz 流式</td><td class="good">阿里云计费</td><td>10 语言 · 语音设计 · 开源</td></tr>
+    <tr><td>Qwen3-TTS-Flash (轻量)</td><td class="good">优</td><td class="good">支持</td><td class="good">流式</td><td class="good">更低</td><td>低延迟优先</td></tr>
+    <tr><td>CosyVoice v3</td><td class="good">优</td><td class="good">支持</td><td class="good">流式</td><td class="good">阿里云计费</td><td>Qwen3-TTS 前代</td></tr>
+    <tr><td>Gemini 2.5 Flash TTS</td><td>良</td><td class="good">支持</td><td class="good">流式</td><td>$0.50/$10 per 1M tok</td><td>自然语言控制风格</td></tr>
+    <tr><td>Gemini 2.5 Pro TTS</td><td class="good">优</td><td class="good">支持</td><td class="good">流式</td><td>$1.00/$20 per 1M tok</td><td>30 预设音色 · 多说话人</td></tr>
+    <tr><td>MiniMax TTS</td><td class="good">极强(粤+普)</td><td class="good">支持</td><td class="good">流式</td><td>竞争力</td><td>300+ 音色 · 20万字长文</td></tr>
+    <tr><td>OpenAI TTS-1</td><td>良</td><td class="bad">不支持</td><td class="good">流式</td><td>$15/1M chars</td><td>6 预设音色 · 简单易用</td></tr>
+    <tr><td>ElevenLabs</td><td>良</td><td class="good">支持</td><td class="good">流式</td><td class="bad">$206/1M chars</td><td>最表现力 · 74 语言</td></tr>
+  </tbody>
+</table>
+
+<div class="highlight-box">
+  <h4>推荐：Qwen3-TTS-Instruct-Flash</h4>
+  <ul>
+    <li><strong>中文 WER 最低</strong>（在对比 MiniMax、ElevenLabs 等系统中排名第一）</li>
+    <li><strong>语音设计</strong>：自然语言描述创建音色（"温暖的女声，30多岁，专业语调"）</li>
+    <li><strong>语音克隆</strong>：短音频样本即可克隆，$0.01/次，可创建统一的「灵听助手」音色</li>
+    <li><strong>同生态优势</strong>：与 Paraformer STT + Qwen3-Max LLM 统一在阿里云，一个账号管理</li>
+    <li><strong>开源</strong>：0.6B/1.7B 模型完全开源，可自部署降低成本</li>
+  </ul>
+  <p style="margin-top:12px;color:var(--t3);font-size:12px">备选：Gemini 2.5 Pro TTS — 自然语言控制风格极为灵活（"用轻松的语气读这段差评摘要"），适合多样化语音场景</p>
+  <p style="color:var(--t3);font-size:12px">备选：MiniMax TTS — 粤语+普通话质量极佳，300+ 音色，适合需要大量音色选择的场景</p>
+</div>
+
 <!-- ======================== SECTION 4 ======================== -->
-<h2><span class="num">4</span>优化后架构</h2>
+<h2><span class="num">4</span>优化后架构 <span class="update-tag">更新</span></h2>
 
 <div class="pipeline">
   <div class="step" style="border-color:var(--green)"><strong>前端录音</strong>.webm 96kbps + AGC</div>
-  <div class="arrow">→</div>
+  <div class="arrow">&rarr;</div>
   <div class="step"><strong>上传</strong>Supabase Storage</div>
-  <div class="arrow">→</div>
+  <div class="arrow">&rarr;</div>
   <div class="step" style="border-color:var(--green)"><strong>阿里 Paraformer</strong>STT + 说话人分离</div>
-  <div class="arrow">→</div>
+  <div class="arrow">&rarr;</div>
   <div class="step" style="border-color:var(--green)"><strong>文本清洗</strong>去噪/去重/过滤</div>
-  <div class="arrow">→</div>
-  <div class="step" style="border-color:var(--green)"><strong>Gemini 2.5 Flash<br>/ Qwen-Max</strong>分层分析</div>
-  <div class="arrow">→</div>
+  <div class="arrow">&rarr;</div>
+  <div class="step" style="border-color:var(--green)"><strong>Gemini 2.5 Flash<br>/ Qwen3-Max</strong>分层分析</div>
+  <div class="arrow">&rarr;</div>
   <div class="step"><strong>写入 DB</strong>+ dishMentions</div>
+  <div class="arrow">&rarr;</div>
+  <div class="step" style="border-color:var(--blue)"><strong>Qwen3-TTS</strong>语音摘要(可选)</div>
 </div>
 
-<p>绿色标记为本次优化涉及的环节。</p>
+<p>绿色标记为核心优化环节，蓝色为新增可选模块。</p>
 
 <!-- ======================== SECTION 5 ======================== -->
 <h2><span class="num">5</span>实施计划</h2>
@@ -327,26 +375,35 @@ audio: {
   <div class="item">
     <h4>Phase 1 — 快速见效（1-2天）</h4>
     <p><span class="badge p0">P0</span> Transcript 清洗层 + <code>wp</code> 置信度过滤</p>
-    <p><span class="badge p1">P1</span> 录音码率 48→96kbps，启用 AGC</p>
-    <p><span class="badge p1">P1</span> feedbacks 上限 5→10，新增 dimensions 多维评分</p>
+    <p><span class="badge p1">P1</span> 录音码率 48&rarr;96kbps，启用 AGC</p>
+    <p><span class="badge p1">P1</span> feedbacks 上限 5&rarr;10，新增 dimensions 多维评分</p>
     <p style="color:var(--t3);font-size:12px;margin-top:6px">涉及文件: ai-processing.service.ts, useAudioRecorder.ts</p>
     <p style="color:var(--t3);font-size:12px">改动量: ~100行代码，不影响现有数据结构</p>
   </div>
   <div class="item">
     <h4>Phase 2 — 核心升级（3-5天）</h4>
-    <p><span class="badge p0">P0</span> STT 替换：讯飞 → 阿里 Paraformer-v2（含说话人分离）</p>
+    <p><span class="badge p0">P0</span> STT 替换：讯飞 &rarr; 阿里 Paraformer-v2（含说话人分离）</p>
     <p><span class="badge p0">P0</span> Prompt 适配说话人标记，明确角色区分规则</p>
-    <p><span class="badge p1">P1</span> LLM 升级：Gemini 2.0 Flash → 2.5 Flash（OpenRouter 换 model 字符串）</p>
+    <p><span class="badge p1">P1</span> LLM 升级：Gemini 2.0 Flash &rarr; 2.5 Flash</p>
+    <p><span class="badge updated">更新</span> 差评二审：Qwen-Max &rarr; Qwen3-Max（支持 Thinking 模式）</p>
     <p style="color:var(--t3);font-size:12px;margin-top:6px">涉及文件: 新建 alibaba-stt.service.ts，替换 xunfei-stt.service.ts 调用</p>
     <p style="color:var(--t3);font-size:12px">改动量: 新增 1 个 service 文件，修改 2-3 个调用点</p>
   </div>
   <div class="item">
     <h4>Phase 3 — 精细化（2-3天）</h4>
-    <p><span class="badge p1">P1</span> 差评二审机制：sentiment < 0.4 时自动调用 Qwen-Max 复核</p>
+    <p><span class="badge p1">P1</span> 差评二审机制：sentiment &lt; 0.4 时自动调用 Qwen3-Max 复核</p>
     <p><span class="badge p2">P2</span> dishMentions 表填充，实现菜品级别聚合统计</p>
     <p><span class="badge p2">P2</span> 新增 confidence 字段，低置信度结果标记人工复核</p>
     <p style="color:var(--t3);font-size:12px;margin-top:6px">涉及文件: ai-processing.service.ts, supabase.service.ts</p>
     <p style="color:var(--t3);font-size:12px">可能需要 DB migration: dimensions JSONB 字段, confidence float 字段</p>
+  </div>
+  <div class="item">
+    <h4>Phase 4 — TTS 语音扩展（2-3天）<span class="update-tag">新增</span></h4>
+    <p><span class="badge p2">P2</span> 接入 Qwen3-TTS-Instruct-Flash，创建「灵听助手」统一音色</p>
+    <p><span class="badge p2">P2</span> 日报语音摘要：每日自动生成管理层语音简报</p>
+    <p><span class="badge p2">P2</span> 差评语音提醒：差评录音分析完成后推送语音通知给店长</p>
+    <p style="color:var(--t3);font-size:12px;margin-top:6px">涉及文件: 新建 qwen-tts.service.ts，修改日报生成逻辑</p>
+    <p style="color:var(--t3);font-size:12px">改动量: 新增 1 个 service 文件 + 调用点</p>
   </div>
 </div>
 
@@ -363,6 +420,7 @@ audio: {
       <li>单一情绪分无法表达复杂感受</li>
       <li>无法判断分析结果是否可靠</li>
       <li>菜品统计靠 AI 临时推算</li>
+      <li>管理层只能看文字报告</li>
     </ul>
   </div>
   <div class="card">
@@ -374,23 +432,25 @@ audio: {
       <li>口味/服务/速度多维度评分</li>
       <li>confidence 标记可疑结果</li>
       <li>菜品级别精确聚合（dish_mentions 表）</li>
+      <li>语音日报 + 差评语音提醒</li>
     </ul>
   </div>
 </div>
 
 <div class="card blue" style="margin-top:24px">
-  <h4 style="color:var(--blue)">成本影响</h4>
+  <h4 style="color:var(--blue)">成本影响 <span class="update-tag">2026-02 更新</span></h4>
   <p>以 2/19 数据为参考（317 条桌访/天）：</p>
   <table>
     <thead><tr><th>项目</th><th>当前成本/天</th><th>优化后成本/天</th><th>变化</th></tr></thead>
     <tbody>
-      <tr><td>STT</td><td>~¥9.5（讯飞）</td><td>~¥5.1（阿里）</td><td class="good">-46%</td></tr>
-      <tr><td>LLM（日常）</td><td>~¥1.6（Flash 2.0）</td><td>~¥2.5（Flash 2.5）</td><td class="warn">+56%</td></tr>
-      <tr><td>LLM（差评二审）</td><td>-</td><td>~¥0.14（7条×Qwen）</td><td class="warn">新增</td></tr>
-      <tr><td><strong>合计</strong></td><td><strong>~¥11.1</strong></td><td><strong>~¥7.7</strong></td><td class="good"><strong>-30%</strong></td></tr>
+      <tr><td>STT</td><td>~&yen;9.5（讯飞）</td><td>~&yen;5.1（阿里 Paraformer）</td><td class="good">-46%</td></tr>
+      <tr><td>LLM（日常）</td><td>~&yen;1.6（Flash 2.0）</td><td>~&yen;2.5（Flash 2.5）</td><td class="warn">+56%</td></tr>
+      <tr><td>LLM（差评二审）</td><td>-</td><td>~&yen;0.14（7条&times;Qwen3-Max）</td><td class="warn">新增</td></tr>
+      <tr><td>TTS（语音摘要）</td><td>-</td><td>~&yen;0.5（Qwen3-TTS）</td><td class="warn">新增</td></tr>
+      <tr><td><strong>合计</strong></td><td><strong>~&yen;11.1</strong></td><td><strong>~&yen;8.2</strong></td><td class="good"><strong>-26%</strong></td></tr>
     </tbody>
   </table>
-  <p style="margin-top:8px">STT 成本大幅降低 + LLM 小幅上升 = <strong>总成本下降约 30%，质量显著提升</strong></p>
+  <p style="margin-top:8px">STT 成本大幅降低 + LLM/TTS 小幅上升 = <strong>总成本下降约 26%，质量显著提升 + 新增语音能力</strong></p>
 </div>
 
 <!-- ======================== SECTION 7 ======================== -->
@@ -406,9 +466,340 @@ audio: {
     <tr><td><code>supabase.service.ts</code></td><td>启用 insertDishMentions 调用</td><td>Phase 3</td></tr>
     <tr><td><code>database.ts</code></td><td>补充 dimensions / confidence 类型</td><td>Phase 3</td></tr>
     <tr><td>Supabase Migration</td><td>新增字段: dimensions, confidence</td><td>Phase 3</td></tr>
+    <tr><td><code>qwen-tts.service.ts</code> <span class="update-tag">新增</span></td><td>新建：Qwen3-TTS 接入 + 语音克隆</td><td>Phase 4</td></tr>
+    <tr><td>日报生成逻辑</td><td>增加语音摘要生成调用</td><td>Phase 4</td></tr>
   </tbody>
 </table>
 
+<!-- ======================== SECTION 8 ======================== -->
+<h2><span class="num">8</span>参考资料</h2>
+
+<div class="card" style="font-size:12px">
+<p style="font-size:13px;color:var(--t1);font-weight:600;margin-bottom:8px">STT 模型</p>
+<ul>
+  <li>阿里 Paraformer-v2: <a href="https://www.alibabacloud.com/help/en/model-studio/paraformer-speech-recognition/" style="color:var(--blue)">alibabacloud.com/help</a></li>
+  <li>阿里 SenseVoice: <a href="https://github.com/modelscope/FunASR" style="color:var(--blue)">github.com/modelscope/FunASR</a></li>
+  <li>OpenAI GPT-4o Transcribe: <a href="https://platform.openai.com/docs/models/gpt-4o-transcribe" style="color:var(--blue)">platform.openai.com</a></li>
+  <li>Google Chirp 3: <a href="https://docs.cloud.google.com/speech-to-text/docs/models/chirp-3" style="color:var(--blue)">docs.cloud.google.com</a></li>
+  <li>Deepgram Nova-3: <a href="https://developers.deepgram.com/docs/models-languages-overview" style="color:var(--blue)">developers.deepgram.com</a></li>
+  <li>Azure Speech: <a href="https://azure.microsoft.com/en-us/pricing/details/speech/" style="color:var(--blue)">azure.microsoft.com</a></li>
+</ul>
+<p style="font-size:13px;color:var(--t1);font-weight:600;margin:12px 0 8px">LLM 模型</p>
+<ul>
+  <li>Gemini 2.5 Flash/Pro: <a href="https://ai.google.dev/gemini-api/docs/pricing" style="color:var(--blue)">ai.google.dev</a></li>
+  <li>Qwen3-Max: <a href="https://openrouter.ai/qwen/qwen3-max" style="color:var(--blue)">openrouter.ai</a></li>
+  <li>DeepSeek V3.2/V4: <a href="https://www.bentoml.com/blog/the-complete-guide-to-deepseek-models-from-v3-to-r1-and-beyond" style="color:var(--blue)">bentoml.com</a></li>
+</ul>
+<p style="font-size:13px;color:var(--t1);font-weight:600;margin:12px 0 8px">TTS 模型</p>
+<ul>
+  <li>Qwen3-TTS: <a href="https://github.com/QwenLM/Qwen3-TTS" style="color:var(--blue)">github.com/QwenLM/Qwen3-TTS</a></li>
+  <li>Gemini TTS: <a href="https://ai.google.dev/gemini-api/docs/speech-generation" style="color:var(--blue)">ai.google.dev</a></li>
+  <li>MiniMax TTS / Inworld TTS: <a href="https://www.speechmatics.com/company/articles-and-news/best-tts-apis-in-2025-top-12-text-to-speech-services-for-developers" style="color:var(--blue)">speechmatics.com</a></li>
+</ul>
 </div>
+
+</div><!-- .container -->
+
+<!-- ======================== EXPORT BAR ======================== -->
+<div class="export-bar">
+  <button onclick="exportLlmsTxt()">导出 llms.txt（供 AI Agent 使用）</button>
+  <button class="secondary" onclick="exportFullMd()">导出完整 Markdown</button>
+</div>
+
+<script>
+function exportLlmsTxt() {
+  const txt = `# 灵听桌访系统 — 准确度优化方案
+
+> 全链路分析：从音频采集到 AI 结构化输出，逐层定位问题并给出实施方案。适用于有点东西餐饮集团灵听 Lingtin v3.9+。更新于 2026-02-22。
+
+## 当前问题
+
+- P0: 无说话人分离，店长/顾客角色混淆（xunfei-stt.service.ts 未启用 speaker_diarization）
+- P0: Transcript 无预处理，噪声直传 LLM（ai-processing.service.ts 中 rawTranscript 直传）
+- P1: feedbacks 硬限 5 条，负面反馈可能截断
+- P1: 情绪评分单维度 sentimentScore (0~1)，无法表达复杂感受
+- P1: 录音码率 48kbps 偏低，嘈杂环境丢细节
+- P2: dishMentions 表未填充，菜品统计靠临时推算
+- P2: 无分析置信度输出
+
+## STT 模型推荐（2026-02 更新）
+
+首选: 阿里 Paraformer-v2（通义听悟）
+- 内置说话人分离 + 方言强 + REST API
+- 成本: ¥0.008/15s
+- 与 Qwen3-TTS 同生态
+
+备选:
+- OpenAI GPT-4o Transcribe-Diarize: $0.006/min，中文极强，幻觉率降 90%，但限 25MB 无方言
+- Google Chirp 3: $0.016/min，85+ 语言，内置降噪 + 说话人分离
+- Azure Speech 快速转写: $0.006/min 批量，说话人分离免费
+- Deepgram Nova-3: $0.0065/min，噪声表现最强，但中文方言弱
+- 阿里 SenseVoice: 开源免费，50+ 语言 + 情绪识别 + 音频事件检测
+
+## LLM 分析模型推荐（2026-02 更新）
+
+分层策略:
+- 日常桌访 (sentiment >= 0.4): Gemini 2.5 Flash — $0.30/$2.50 per 1M tokens, 251 tok/s
+- 差评二审 (sentiment < 0.4): Qwen3-Max — $1.20/$6.00 per 1M tokens, 支持 Thinking 模式
+- 超低成本批量: Gemini 2.5 Flash-Lite — $0.10/$0.40 per 1M tokens
+
+其他选项:
+- DeepSeek-V3.2: 中文极强，极低成本（V4 预计 2026 年 2 月中下旬发布）
+- Claude Sonnet 4.6: 结构化输出极强，$3.00/$15.00 per 1M tokens
+- Qwen3-Max Thinking: 复杂争议场景，深度推理
+
+## TTS 语音合成推荐（2026-02 新增）
+
+首选: Qwen3-TTS-Instruct-Flash（2026-01-26 发布）
+- 中文 WER 最低（SOTA）
+- 语音克隆 $0.01/次 + 自然语言语音设计
+- 10 语言，12Hz 流式输出
+- 开源: github.com/QwenLM/Qwen3-TTS
+
+备选:
+- Gemini 2.5 Pro TTS: $1.00/$20 per 1M tokens，自然语言控制风格
+- MiniMax TTS: 粤语+普通话极佳，300+ 音色
+- CosyVoice v3: Qwen3-TTS 前代，阿里云计费
+
+## Prompt 优化方向
+
+输出结构升级:
+- feedbacks 上限 5→10
+- 新增 dimensions: { taste, service, speed } 多维评分
+- 新增 confidence: 0-1 置信度标记
+- 新增 dishMentions: 菜品级别情感提取
+- 说话人标记适配: 按 speaker tag 区分店长/顾客
+
+## 录音质量
+
+- audioBitsPerSecond: 48000 → 96000
+- 新增 autoGainControl: true
+- 保持 echoCancellation + noiseSuppression
+
+## 实施计划
+
+Phase 1 (1-2天): 文本清洗层 + 录音码率提升 + prompt 优化
+Phase 2 (3-5天): STT 替换为 Paraformer-v2 + LLM 升级 Gemini 2.5 Flash + Qwen3-Max
+Phase 3 (2-3天): 差评二审 + dishMentions 填充 + confidence 字段
+Phase 4 (2-3天): TTS 接入 Qwen3-TTS + 语音日报 + 差评语音提醒
+
+## 成本影响
+
+基准: 317 条桌访/天
+- 当前总成本: ~¥11.1/天
+- 优化后总成本: ~¥8.2/天（含 TTS）
+- 变化: -26%，质量显著提升 + 新增语音能力
+
+## 涉及文件
+
+- useAudioRecorder.ts: 录音参数（Phase 1）
+- ai-processing.service.ts: 清洗层 + prompt + 分层调用（Phase 1-3）
+- xunfei-stt.service.ts: 废弃保留（Phase 2）
+- alibaba-stt.service.ts: 新建 Paraformer 接入（Phase 2）
+- supabase.service.ts: 启用 dishMentions（Phase 3）
+- database.ts: dimensions/confidence 类型（Phase 3）
+- qwen-tts.service.ts: 新建 TTS 接入（Phase 4）
+- Supabase Migration: dimensions JSONB + confidence float
+
+## 参考链接
+
+- [阿里 Paraformer-v2 文档](https://www.alibabacloud.com/help/en/model-studio/paraformer-speech-recognition/)
+- [阿里 SenseVoice / FunASR](https://github.com/modelscope/FunASR)
+- [OpenAI GPT-4o Transcribe](https://platform.openai.com/docs/models/gpt-4o-transcribe)
+- [Google Chirp 3](https://docs.cloud.google.com/speech-to-text/docs/models/chirp-3)
+- [Deepgram Nova-3](https://developers.deepgram.com/docs/models-languages-overview)
+- [Azure Speech 定价](https://azure.microsoft.com/en-us/pricing/details/speech/)
+- [Gemini API 定价](https://ai.google.dev/gemini-api/docs/pricing)
+- [Qwen3-Max (OpenRouter)](https://openrouter.ai/qwen/qwen3-max)
+- [DeepSeek 模型指南](https://www.bentoml.com/blog/the-complete-guide-to-deepseek-models-from-v3-to-r1-and-beyond)
+- [Qwen3-TTS GitHub](https://github.com/QwenLM/Qwen3-TTS)
+- [Gemini TTS 文档](https://ai.google.dev/gemini-api/docs/speech-generation)
+- [llms.txt 协议规范](https://llmstxt.org/)
+`;
+  downloadFile('lingtin-accuracy-plan.llms.txt', txt.trim());
+}
+
+function exportFullMd() {
+  const md = `# 灵听桌访系统 — 准确度优化方案 v2
+
+> 全链路分析：从音频采集到 AI 结构化输出，逐层定位问题并给出实施方案
+>
+> 有点东西餐饮集团 · 灵听 Lingtin v3.9+ · 更新于 2026-02-22
+
+---
+
+## 1. 当前架构与数据流
+
+\`\`\`
+前端录音(.webm 48kbps) → 上传(Supabase) → FFmpeg(PCM 16kHz) → 讯飞 STT(方言大模型) → 无清洗 → Gemini Flash → 写入 DB
+\`\`\`
+
+红色瓶颈：讯飞 STT（无说话人分离）+ 无清洗（噪声直传）
+
+---
+
+## 2. 问题总结
+
+### P0 严重
+- **无说话人分离**：STT 输出单一文本流，店长/顾客角色混淆。文件: xunfei-stt.service.ts
+- **Transcript 无预处理**：原始文本直传 Gemini，讯飞 wp 置信度字段被丢弃。文件: ai-processing.service.ts
+
+### P1 重要
+- **feedbacks 硬限 5 条**：超出的负面反馈被截断
+- **情绪评分单维度**：sentimentScore (0~1) 无法表达「菜品好但服务差」
+- **录音码率偏低**：48kbps opus 在嘈杂环境丢细节。文件: useAudioRecorder.ts
+
+### P2 优化
+- **dishMentions 表未填充**：insertDishMentions 方法存在但未被调用
+- **无分析置信度输出**：无法区分「明确差评」和「模糊中评」
+
+---
+
+## 3. 优化方案
+
+### 3.1 STT 模型替换（2026-02 更新）
+
+核心需求：说话人分离 + 方言识别 + 噪声环境适应。门店在四川（江油、上马）。
+
+| 模型 | 说话人分离 | 中文/方言 | 噪声 | 成本 | 接入 |
+|------|-----------|----------|------|------|------|
+| 讯飞方言大模型 (当前) | 不支持 | 202种方言 | 一般 | ~¥0.03/次 | WebSocket |
+| **阿里 Paraformer-v2** ⭐ | 内置 | 方言强 | 强 | ¥0.008/15s | REST API |
+| 阿里 SenseVoice 🆕 | 需外挂 | 50+语言 | 强 | 开源免费 | 自部署/API |
+| OpenAI GPT-4o Transcribe 🆕 | 内置 | 中文极强 | 很强 | $0.006/min | REST API |
+| OpenAI GPT-4o-mini Transcribe 🆕 | 不支持 | 中文极强 | 很强 | $0.003/min | REST API |
+| Google Chirp 3 (原 Chirp 2) | 内置 | 85+语言 | 内置降噪 | $0.016/min | REST API |
+| Azure Speech 快速转写 | 批量免费 | zh-CN/zh-HK | 强 | $0.006/min | REST API |
+| Deepgram Nova-3 | 内置 | 方言弱 | 很强 | $0.0065/min | REST API |
+
+**推荐：阿里 Paraformer-v2** — 方言强 + 说话人分离 + 与 Qwen3 生态统一
+
+### 3.2 LLM 分析模型替换（2026-02 更新）
+
+| 模型 | 中文理解 | 结构化 | 速度 | 成本/1M tokens | 适用 |
+|------|---------|-------|------|---------------|------|
+| Gemini 2.0 Flash (当前) | 良 | 良 | 快 | 已停用 | - |
+| **Gemini 2.5 Flash** ⭐ | 优 | 优 | 251 tok/s | $0.30/$2.50 | 日常桌访 |
+| Gemini 2.5 Flash-Lite 🆕 | 良 | 良 | 极快 | $0.10/$0.40 | 超低成本 |
+| DeepSeek-V3.2 (原 V3) | 极强 | 强 | 快 | 极低 | 日常桌访 |
+| **Qwen3-Max** ⭐ (原 Qwen-Max) | 极强 | 极强 | 中 | $1.20/$6.00 | 差评二审 |
+| Qwen3-Max Thinking 🆕 | 极强 | 极强 | 慢 | $1.20/$6.00 | 复杂争议 |
+| Claude Sonnet 4.6 (原 Sonnet 4) | 优 | 极强 | 中 | $3.00/$15.00 | 差评二审 |
+
+**推荐：分层策略** — 日常用 Gemini 2.5 Flash，差评用 Qwen3-Max
+
+### 3.3 Transcript 清洗层（新增）
+
+\`\`\`
+rawTranscript → 去除连续重复 → 过滤低置信度词(wp) → 去语气词 → 合并碎片句 → cleanTranscript → LLM
+\`\`\`
+
+### 3.4 Prompt 优化
+
+输出结构升级：
+- feedbacks 上限 5→10
+- 新增 dimensions: { taste, service, speed }
+- 新增 confidence: 0-1
+- 新增 dishMentions: [{ dish, sentiment }]
+- 说话人标记适配
+
+### 3.5 录音质量提升
+
+\`\`\`javascript
+// useAudioRecorder.ts
+const recorderOptions = { audioBitsPerSecond: 96000 }; // 48000 → 96000
+audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, sampleRate: 44100 }
+\`\`\`
+
+### 3.6 TTS 语音合成（2026-02 新增）
+
+| 模型 | 中文质量 | 语音克隆 | 流式 | 成本 | 特色 |
+|------|---------|---------|------|------|------|
+| **Qwen3-TTS-Instruct-Flash** ⭐ | SOTA | 支持 | 12Hz | 阿里云计费 | 10语言·语音设计·开源 |
+| Qwen3-TTS-Flash | 优 | 支持 | 流式 | 更低 | 低延迟优先 |
+| CosyVoice v3 | 优 | 支持 | 流式 | 阿里云计费 | Qwen3-TTS 前代 |
+| Gemini 2.5 Flash TTS | 良 | 支持 | 流式 | $0.50/$10/1M tok | 自然语言控制风格 |
+| Gemini 2.5 Pro TTS | 优 | 支持 | 流式 | $1.00/$20/1M tok | 30音色·多说话人 |
+| MiniMax TTS | 极强(粤+普) | 支持 | 流式 | 竞争力 | 300+音色·20万字 |
+
+**推荐：Qwen3-TTS-Instruct-Flash** — 中文 SOTA + 同生态 + 开源
+
+---
+
+## 4. 优化后架构
+
+\`\`\`
+前端(.webm 96kbps+AGC) → Supabase → Paraformer(STT+说话人) → 文本清洗 → Gemini 2.5 Flash/Qwen3-Max → DB+dishMentions → [可选] Qwen3-TTS(语音摘要)
+\`\`\`
+
+---
+
+## 5. 实施计划
+
+- **Phase 1 (1-2天)**: 清洗层 + 录音提升 + prompt 优化
+- **Phase 2 (3-5天)**: STT→Paraformer + LLM→Gemini 2.5 Flash + Qwen3-Max
+- **Phase 3 (2-3天)**: 差评二审 + dishMentions + confidence
+- **Phase 4 (2-3天)**: TTS 接入 + 语音日报 + 差评语音提醒
+
+---
+
+## 6. 成本影响
+
+基准: 317 条桌访/天
+
+| 项目 | 当前/天 | 优化后/天 | 变化 |
+|------|--------|----------|------|
+| STT | ~¥9.5（讯飞） | ~¥5.1（阿里） | -46% |
+| LLM（日常） | ~¥1.6（Flash 2.0） | ~¥2.5（Flash 2.5） | +56% |
+| LLM（差评二审） | - | ~¥0.14（Qwen3-Max） | 新增 |
+| TTS（语音摘要） | - | ~¥0.5（Qwen3-TTS） | 新增 |
+| **合计** | **~¥11.1** | **~¥8.2** | **-26%** |
+
+---
+
+## 7. 涉及文件
+
+| 文件 | 改动 | Phase |
+|------|------|-------|
+| useAudioRecorder.ts | 录音参数 | 1 |
+| ai-processing.service.ts | 清洗+prompt+分层 | 1-3 |
+| xunfei-stt.service.ts | 废弃保留 | 2 |
+| alibaba-stt.service.ts | 新建 Paraformer | 2 |
+| supabase.service.ts | dishMentions | 3 |
+| database.ts | dimensions/confidence | 3 |
+| qwen-tts.service.ts | 新建 TTS | 4 |
+| Supabase Migration | 新增字段 | 3 |
+
+---
+
+## 8. 参考链接
+
+- [阿里 Paraformer-v2](https://www.alibabacloud.com/help/en/model-studio/paraformer-speech-recognition/)
+- [阿里 SenseVoice / FunASR](https://github.com/modelscope/FunASR)
+- [OpenAI GPT-4o Transcribe](https://platform.openai.com/docs/models/gpt-4o-transcribe)
+- [Google Chirp 3](https://docs.cloud.google.com/speech-to-text/docs/models/chirp-3)
+- [Deepgram Nova-3](https://developers.deepgram.com/docs/models-languages-overview)
+- [Azure Speech](https://azure.microsoft.com/en-us/pricing/details/speech/)
+- [Gemini API 定价](https://ai.google.dev/gemini-api/docs/pricing)
+- [Qwen3-Max](https://openrouter.ai/qwen/qwen3-max)
+- [DeepSeek](https://www.bentoml.com/blog/the-complete-guide-to-deepseek-models-from-v3-to-r1-and-beyond)
+- [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS)
+- [Gemini TTS](https://ai.google.dev/gemini-api/docs/speech-generation)
+- [llms.txt 协议](https://llmstxt.org/)
+`;
+  downloadFile('lingtin-accuracy-plan.md', md.trim());
+}
+
+function downloadFile(name, content) {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+</script>
 </body>
 </html>
